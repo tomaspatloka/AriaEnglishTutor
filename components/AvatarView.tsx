@@ -42,6 +42,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
   const activeError = isLiveMode ? liveError : null;
 
   const [displayedText, setDisplayedText] = useState("Tap microphone to start conversation");
+  const [czechTranslation, setCzechTranslation] = useState('');
   
   // 4. Cleanup when switching modes
   useEffect(() => {
@@ -72,6 +73,23 @@ const AvatarView: React.FC<AvatarViewProps> = ({
     }
   };
 
+  // Helper: Extract English text and Czech translation from raw transcript
+  const parseTranscript = (raw: string): { english: string; czech: string } => {
+    // Remove corrections section
+    const withoutCorrections = raw.split("💡")[0];
+
+    // Split on Czech translation marker
+    const czechMarkerIndex = withoutCorrections.indexOf("🇨🇿");
+    if (czechMarkerIndex !== -1) {
+      const english = withoutCorrections.substring(0, czechMarkerIndex).trim();
+      let czech = withoutCorrections.substring(czechMarkerIndex).trim();
+      // Remove the marker prefix variants
+      czech = czech.replace(/^🇨🇿\s*(Translation|Překlad)\s*:\s*/i, '').trim();
+      return { english, czech };
+    }
+    return { english: withoutCorrections.trim(), czech: '' };
+  };
+
   // 6. Update Display Text Logic
   useEffect(() => {
     if (isLiveMode) {
@@ -80,11 +98,16 @@ const AvatarView: React.FC<AvatarViewProps> = ({
             if (liveIsSpeaking) {
                 // Show real-time transcript of what Aria is saying
                 if (settings.showEnglishTranscript && outputTranscript) {
-                    // Strip correction/translation markers for clean display
-                    const cleanText = outputTranscript.split("💡")[0].replace("🇨🇿 Translation:", "").trim();
-                    setDisplayedText(cleanText || "Aria is speaking...");
+                    const { english, czech } = parseTranscript(outputTranscript);
+                    setDisplayedText(english || "Aria is speaking...");
+                    if (settings.showCzechTranslation) {
+                        setCzechTranslation(czech);
+                    } else {
+                        setCzechTranslation('');
+                    }
                 } else {
                     setDisplayedText("Aria is speaking...");
+                    setCzechTranslation('');
                 }
             } else {
                 // Show real-time transcript of what user is saying
@@ -93,31 +116,37 @@ const AvatarView: React.FC<AvatarViewProps> = ({
                 } else {
                     setDisplayedText("Listening...");
                 }
+                setCzechTranslation('');
             }
         } else if (!liveError) {
              setDisplayedText("Tap microphone to start conversation (Live)");
+             setCzechTranslation('');
         }
     } else {
         // --- Legacy Mode Text Logic ---
         if (legacyIsListening) {
-             // If user is speaking, show what they are saying (currentInput)
-             // If silent/listening, show prompt
              if (currentInput) {
                  setDisplayedText(currentInput);
              } else {
                  setDisplayedText("Listening...");
              }
+             setCzechTranslation('');
         } else if (legacyIsSpeaking) {
-             // If AI is speaking (TTS), show the AI message
              if (latestMessage?.role === 'model') {
-                 // Strip internal tags for display clean-up if needed, or just show raw
-                 const cleanText = latestMessage.text.split("💡")[0].replace("🇨🇿 Translation:", "");
-                 setDisplayedText(cleanText);
+                 const { english, czech } = parseTranscript(latestMessage.text);
+                 setDisplayedText(english);
+                 if (settings.showCzechTranslation) {
+                     setCzechTranslation(czech);
+                 } else {
+                     setCzechTranslation('');
+                 }
              } else {
                  setDisplayedText("Speaking...");
+                 setCzechTranslation('');
              }
         } else {
              setDisplayedText("Tap microphone to start conversation (Standard)");
+             setCzechTranslation('');
         }
     }
   }, [
@@ -131,7 +160,8 @@ const AvatarView: React.FC<AvatarViewProps> = ({
       liveError,
       outputTranscript,
       inputTranscript,
-      settings.showEnglishTranscript
+      settings.showEnglishTranscript,
+      settings.showCzechTranslation
   ]);
 
 
@@ -219,10 +249,17 @@ const AvatarView: React.FC<AvatarViewProps> = ({
       <div className="flex-shrink-0 z-20 flex flex-col items-center gap-4 pb-8 px-6 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/95 to-transparent pt-12">
         
         {/* Status Text (Scrollable/Multiline if needed) */}
-        <div className="w-full max-w-xl flex flex-col items-center justify-end text-center gap-2 min-h-[60px] max-h-[160px] overflow-y-auto no-scrollbar">
-             <p className={`text-lg sm:text-xl font-bold leading-tight drop-shadow-lg transition-all duration-300 line-clamp-5 ${activeIsListening ? 'text-white' : 'text-slate-400'}`}>
+        <div className="w-full max-w-xl flex flex-col items-center justify-end text-center gap-1.5 min-h-[60px] max-h-[180px] overflow-y-auto no-scrollbar">
+             {/* English Transcript */}
+             <p className={`text-lg sm:text-xl font-bold leading-tight drop-shadow-lg transition-all duration-300 line-clamp-4 ${activeIsListening ? 'text-white' : 'text-slate-400'}`}>
                {displayedText}
              </p>
+             {/* Czech Translation — smaller, distinct color, separated */}
+             {czechTranslation && (
+               <p className="text-sm sm:text-base font-medium leading-snug text-amber-300/90 drop-shadow-md line-clamp-3 border-t border-white/10 pt-1.5 mt-0.5 w-full italic">
+                 {czechTranslation}
+               </p>
+             )}
              {activeError && <p className="text-red-400 text-xs font-bold uppercase tracking-widest">{activeError}</p>}
         </div>
 

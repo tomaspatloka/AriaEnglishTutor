@@ -273,15 +273,16 @@ function App() {
         </div>
         <div className="flex-1 overflow-hidden">
           <div className="flex items-center justify-between mb-0.5">
-            <h1 className="font-bold text-lg leading-tight truncate">Aria <span className="text-[10px] font-normal opacity-70">{APP_VERSION}</span></h1>
-            <div className="flex flex-col items-end mr-1 shrink-0">
-              <span className="text-[8px] font-black uppercase tracking-tighter opacity-50">API Usage</span>
-              <div className="w-12 h-1 bg-white/20 rounded-full overflow-hidden mt-0.5">
+            <h1 className="font-bold text-lg leading-tight truncate">Aria <span className="text-[11px] font-semibold text-emerald-200/90 ml-0.5">{APP_VERSION}</span></h1>
+            <div className="flex items-center gap-2 mr-1 shrink-0">
+              <span className="text-[9px] font-bold uppercase tracking-wide text-white/70">API</span>
+              <div className="w-16 h-2 bg-white/20 rounded-full overflow-hidden border border-white/10">
                 <div
-                  className={`h-full transition-all duration-500 ${usage.percent > 90 ? 'bg-red-400' : usage.percent > 70 ? 'bg-orange-400' : 'bg-emerald-300'}`}
+                  className={`h-full rounded-full transition-all duration-500 ${usage.percent > 90 ? 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.5)]' : usage.percent > 70 ? 'bg-orange-400 shadow-[0_0_6px_rgba(251,146,60,0.4)]' : 'bg-emerald-300 shadow-[0_0_6px_rgba(110,231,183,0.4)]'}`}
                   style={{ width: `${usage.percent}%` }}
                 ></div>
               </div>
+              <span className="text-[9px] font-bold text-white/70">{usage.percent}%</span>
             </div>
           </div>
           <p className="text-xs text-emerald-100 opacity-90 truncate">
