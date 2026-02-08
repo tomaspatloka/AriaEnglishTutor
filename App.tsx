@@ -10,6 +10,22 @@ import AvatarView from './components/AvatarView';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useTextToSpeech } from './hooks/useTextToSpeech';
 import { getUsageStats } from './utils/usageUtils';
+import { loadSettings, saveSettings } from './utils/settingsUtils';
+
+const DEFAULT_SETTINGS: AppSettings = {
+  level: 'TEST_ME',
+  nativeLanguage: 'cs',
+  autoPlayAudio: true,
+  voiceAccent: 'US',
+  voiceGender: 'FEMALE',
+  correctionStrictness: 5,
+  showAvatarMode: true,
+  showEnglishTranscript: true,
+  showCzechTranslation: false,
+  avatarType: 'preset-female',
+  customAvatarImageUrl: null,
+  interactionMode: 'live-api',
+};
 
 // Simple ID generator
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -20,23 +36,9 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
 
   // App State
-  const [showLevelSelector, setShowLevelSelector] = useState(true);
+  const [settings, setSettings] = useState<AppSettings>(() => loadSettings(DEFAULT_SETTINGS));
+  const [showLevelSelector, setShowLevelSelector] = useState(() => !localStorage.getItem('aria_app_settings'));
   const [showSettings, setShowSettings] = useState(false);
-
-  const [settings, setSettings] = useState<AppSettings>({
-    level: 'TEST_ME',
-    nativeLanguage: 'cs',
-    autoPlayAudio: true,
-    voiceAccent: 'US',
-    voiceGender: 'FEMALE',
-    correctionStrictness: 5,
-    showAvatarMode: true, // Default to Avatar Mode
-    showEnglishTranscript: true, // Default ON
-    showCzechTranslation: false, // Default OFF
-    avatarType: 'preset-female', // Default to Sarah (Preset Female)
-    customAvatarImageUrl: null,
-    interactionMode: 'live-api', // Default to the new Live API
-  });
 
   const [usage, setUsage] = useState(getUsageStats());
 
@@ -92,6 +94,7 @@ function App() {
   const handleLevelSelect = async (level: EnglishLevel) => {
     const newSettings = { ...settings, level };
     setSettings(newSettings);
+    saveSettings(newSettings);
     setShowLevelSelector(false);
 
     setIsLoading(true);
@@ -111,12 +114,36 @@ function App() {
     setIsLoading(false);
   };
 
+  // Auto-init for persisted settings
+  useEffect(() => {
+    if (!showLevelSelector && messages.length === 0) {
+      const initPersistentSession = async () => {
+        setIsLoading(true);
+        await initializeChat(settings.level, settings.correctionStrictness, settings.showCzechTranslation);
+
+        const greetingText = settings.level === 'TEST_ME'
+          ? INITIAL_GREETING_TEST
+          : INITIAL_GREETING_LEVEL(settings.level);
+
+        setMessages([{
+          id: generateId(),
+          role: 'model',
+          text: greetingText,
+          timestamp: Date.now()
+        }]);
+        setIsLoading(false);
+      };
+      initPersistentSession();
+    }
+  }, [showLevelSelector, messages.length, settings.level, settings.correctionStrictness, settings.showCzechTranslation]);
+
   const handleSettingsSave = async (newSettings: AppSettings) => {
     const prevLevel = settings.level;
     const prevStrictness = settings.correctionStrictness;
     const prevTranslation = settings.showCzechTranslation;
 
     setSettings(newSettings);
+    saveSettings(newSettings);
 
     // If critical learning parameters changed while in conversation, notify AI
     // Only relevant for Legacy mode or if we implement chat updates in Live mode later
