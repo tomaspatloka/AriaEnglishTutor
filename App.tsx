@@ -9,6 +9,7 @@ import SettingsModal from './components/SettingsModal';
 import AvatarView from './components/AvatarView';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useTextToSpeech } from './hooks/useTextToSpeech';
+import { getUsageStats } from './utils/usageUtils';
 
 // Simple ID generator
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -36,6 +37,8 @@ function App() {
     customAvatarImageUrl: null,
     interactionMode: 'live-api', // Default to the new Live API
   });
+
+  const [usage, setUsage] = useState(getUsageStats());
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -76,6 +79,15 @@ function App() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading, settings.showAvatarMode]);
+
+  // Listen for usage updates
+  useEffect(() => {
+    const handleUsageUpdate = () => {
+      setUsage(getUsageStats());
+    };
+    window.addEventListener('aria-usage-updated', handleUsageUpdate);
+    return () => window.removeEventListener('aria-usage-updated', handleUsageUpdate);
+  }, []);
 
   const handleLevelSelect = async (level: EnglishLevel) => {
     const newSettings = { ...settings, level };

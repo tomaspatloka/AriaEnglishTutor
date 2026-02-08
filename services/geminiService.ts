@@ -1,6 +1,7 @@
 import { GoogleGenAI, Chat, Content } from "@google/genai";
 import { MODEL_NAME, getSystemInstruction } from "../constants";
 import { Message } from "../types";
+import { incrementUsage } from "../utils/usageUtils";
 
 let chatSession: Chat | null = null;
 
@@ -20,7 +21,7 @@ export const sendMessageToGemini = async (
 ): Promise<string> => {
   if (!chatSession) {
     // Default fallback
-    await initializeChat('TEST_ME', 5, false); 
+    await initializeChat('TEST_ME', 5, false);
   }
 
   if (!chatSession) {
@@ -29,6 +30,7 @@ export const sendMessageToGemini = async (
 
   try {
     const result = await chatSession.sendMessage({ message: text });
+    incrementUsage();
     return result.text || "";
   } catch (error) {
     console.error("Gemini API Error:", error);
