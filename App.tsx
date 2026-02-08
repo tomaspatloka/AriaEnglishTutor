@@ -372,8 +372,8 @@ function App() {
             {/* API Info Popup */}
             {showApiInfo && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowApiInfo(false)} />
-                <div className="absolute top-12 right-0 z-50 w-72 bg-slate-900 border border-white/15 rounded-2xl shadow-2xl p-4 text-left animate-in">
+                <div className="fixed inset-0 z-[100]" onClick={() => setShowApiInfo(false)} />
+                <div className="fixed top-16 right-4 z-[101] w-72 bg-slate-900 border border-white/15 rounded-2xl shadow-2xl p-4 text-left">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-black text-white">API Usage</h3>
                     <button onClick={() => setShowApiInfo(false)} className="text-white/40 hover:text-white/80 transition">
