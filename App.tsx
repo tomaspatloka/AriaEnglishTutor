@@ -369,36 +369,6 @@ function App() {
               <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white">{Math.round(usage.percent)}</span>
             </button>
 
-            {/* API Info Popup */}
-            {showApiInfo && (
-              <>
-                <div className="fixed inset-0 z-[100]" onClick={() => setShowApiInfo(false)} />
-                <div className="fixed top-16 right-4 z-[101] w-72 bg-slate-900 border border-white/15 rounded-2xl shadow-2xl p-4 text-left">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-black text-white">API Usage</h3>
-                    <button onClick={() => setShowApiInfo(false)} className="text-white/40 hover:text-white/80 transition">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                        <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className={`text-2xl font-black mb-2 ${usage.percent > 90 ? 'text-red-400' : usage.percent > 70 ? 'text-orange-400' : 'text-emerald-400'}`}>
-                    {Math.round(usage.percent)}% využito
-                  </div>
-                  <div className="text-xs text-white/60 mb-3">
-                    {usage.current} / {usage.limit} požadavků dnes
-                  </div>
-                  <div className="space-y-2 text-[11px] text-white/70 leading-relaxed">
-                    <p>Toto ukazuje <span className="text-white font-semibold">denní využití API tokenů</span> pro komunikaci s AI.</p>
-                    <p>Aplikace běží na <span className="text-amber-300 font-semibold">testovacím (free) plánu</span> s denním limitem {usage.limit} požadavků.</p>
-                    <p>Po vyčerpání limitu se AI funkce <span className="text-red-400 font-semibold">dočasně vypnou</span>. Limit se automaticky resetuje následující den.</p>
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-white/10 text-[10px] text-white/40 text-center">
-                    Resetuje se každý den o půlnoci
-                  </div>
-                </div>
-              </>
-            )}
           </div>
 
           <button
@@ -419,6 +389,37 @@ function App() {
           </button>
         </div>
       </header>
+
+      {/* API Info Popup — rendered at root level to escape header stacking context */}
+      {showApiInfo && (
+        <>
+          <div className="fixed inset-0 z-[100]" onClick={() => setShowApiInfo(false)} />
+          <div className="fixed top-16 right-4 z-[101] w-72 bg-slate-900 border border-white/15 rounded-2xl shadow-2xl p-4 text-left">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-black text-white">API Usage</h3>
+              <button onClick={() => setShowApiInfo(false)} className="p-1 text-white/40 hover:text-white/80 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </svg>
+              </button>
+            </div>
+            <div className={`text-2xl font-black mb-2 ${usage.percent > 90 ? 'text-red-400' : usage.percent > 70 ? 'text-orange-400' : 'text-emerald-400'}`}>
+              {Math.round(usage.percent)}% využito
+            </div>
+            <div className="text-xs text-white/60 mb-3">
+              {usage.current} / {usage.limit} požadavků dnes
+            </div>
+            <div className="space-y-2 text-[11px] text-white/70 leading-relaxed">
+              <p>Toto ukazuje <span className="text-white font-semibold">denní využití API tokenů</span> pro komunikaci s AI.</p>
+              <p>Aplikace běží na <span className="text-amber-300 font-semibold">testovacím (free) plánu</span> s denním limitem {usage.limit} požadavků.</p>
+              <p>Po vyčerpání limitu se AI funkce <span className="text-red-400 font-semibold">dočasně vypnou</span>. Limit se automaticky resetuje následující den.</p>
+            </div>
+            <div className="mt-3 pt-3 border-t border-white/10 text-[10px] text-white/40 text-center">
+              Resetuje se každý den o půlnoci
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Main Content Area - Swaps based on mode */}
       <main className={`flex-1 overflow-y-auto no-scrollbar ${settings.showAvatarMode ? 'pb-0' : 'p-4 sm:p-6 pb-24'}`}>
