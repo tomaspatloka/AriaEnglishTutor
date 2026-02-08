@@ -263,6 +263,35 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentS
               Pokud aplikace nefunguje správně, použijte toto tlačítko k vynucení stažení nejnovějších souborů (Hard Refresh).
             </p>
           </section>
+
+          <section className="bg-slate-900 rounded-3xl p-6 text-white overflow-hidden relative">
+            {/* Background pattern */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+
+            <h3 className="text-lg font-black mb-3 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-emerald-400">
+                <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.464-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clipRule="evenodd" />
+              </svg>
+              Info o aplikaci
+            </h3>
+
+            <div className="space-y-4 text-sm relative z-10">
+              <p className="text-slate-300 leading-relaxed">
+                Aria je váš osobní AI lektor angličtiny, který využívá nejmodernější model <span className="text-emerald-400 font-bold">Gemini 2.5 Flash</span> pro přirozenou konverzaci a okamžitou zpětnou vazbu.
+              </p>
+
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-800">
+                <div>
+                  <span className="block text-[10px] font-black uppercase text-slate-500 tracking-widest">Rok výroby</span>
+                  <p className="font-bold">2026</p>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-black uppercase text-slate-500 tracking-widest">Autor</span>
+                  <p className="font-bold">Tomas Patloka</p>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
 
         <div className="p-4 border-t border-gray-100 bg-white sticky bottom-0">
