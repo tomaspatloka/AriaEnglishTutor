@@ -331,20 +331,8 @@ function App() {
           <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-300 rounded-full border-2 border-primary"></div>
         </div>
         <div className="flex-1 overflow-hidden">
-          <div className="flex items-center justify-between mb-0.5">
-            <h1 className="font-bold text-lg leading-tight truncate">Aria <span className="text-[11px] font-semibold text-emerald-200/90 ml-0.5">{APP_VERSION}</span></h1>
-            <div className="flex items-center gap-2 mr-1 shrink-0">
-              <span className="text-[9px] font-bold uppercase tracking-wide text-white/70">API</span>
-              <div className="w-16 h-2 bg-white/20 rounded-full overflow-hidden border border-white/10">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${usage.percent > 90 ? 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.5)]' : usage.percent > 70 ? 'bg-orange-400 shadow-[0_0_6px_rgba(251,146,60,0.4)]' : 'bg-emerald-300 shadow-[0_0_6px_rgba(110,231,183,0.4)]'}`}
-                  style={{ width: `${usage.percent}%` }}
-                ></div>
-              </div>
-              <span className="text-[9px] font-bold text-white/70">{usage.percent}%</span>
-            </div>
-          </div>
-          <p className="text-xs text-emerald-100 opacity-90 truncate">
+          <h1 className="font-black text-lg leading-tight truncate text-white">Aria <span className="text-[11px] font-bold text-emerald-200 ml-0.5">{APP_VERSION}</span></h1>
+          <p className="text-[13px] font-semibold text-white/80 truncate">
             {settings.level === 'TEST_ME' ? 'Assessment' : `Level ${settings.level}`} • {activeScenario ? `${activeScenario.icon} ${activeScenario.label}` : (settings.showAvatarMode ? 'Avatar' : 'Chat')}
           </p>
         </div>
@@ -358,6 +346,23 @@ function App() {
               <span className="animate-bounce delay-150 bg-white w-1 h-1 rounded-full"></span>
             </div>
           )}
+
+          {/* API Usage Donut Chart */}
+          <div className="relative w-10 h-10 shrink-0" title={`API: ${Math.round(usage.percent)}%`}>
+            <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+              <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="3.5" />
+              <circle
+                cx="18" cy="18" r="14"
+                fill="none"
+                stroke={usage.percent > 90 ? '#f87171' : usage.percent > 70 ? '#fb923c' : '#6ee7b7'}
+                strokeWidth="3.5"
+                strokeLinecap="round"
+                strokeDasharray={`${usage.percent * 0.88} 88`}
+                className="transition-all duration-700"
+              />
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white">{Math.round(usage.percent)}</span>
+          </div>
 
           <button
             onClick={() => setShowScenarios(true)}
