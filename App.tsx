@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Message, EnglishLevel, AppSettings } from './types';
-import { INITIAL_GREETING_TEST, INITIAL_GREETING_LEVEL, PRESET_AVATARS } from './constants';
+import { INITIAL_GREETING_TEST, INITIAL_GREETING_LEVEL, PRESET_AVATARS, APP_VERSION } from './constants';
 import { initializeChat, sendMessageToGemini } from './services/geminiService';
 import MessageBubble from './components/MessageBubble';
 import InputArea from './components/InputArea';
@@ -17,11 +17,11 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // App State
   const [showLevelSelector, setShowLevelSelector] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
-  
+
   const [settings, setSettings] = useState<AppSettings>({
     level: 'TEST_ME',
     nativeLanguage: 'cs',
@@ -36,15 +36,15 @@ function App() {
     customAvatarImageUrl: null,
     interactionMode: 'live-api', // Default to the new Live API
   });
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  const { 
-    isListening, 
-    transcript, 
-    startListening, 
-    stopListening, 
-    resetTranscript 
+
+  const {
+    isListening,
+    transcript,
+    startListening,
+    stopListening,
+    resetTranscript
   } = useSpeechRecognition();
 
   // Pass settings to TTS hook
@@ -65,7 +65,7 @@ function App() {
   useEffect(() => {
     if (settings.interactionMode === 'legacy') {
       if (prevListeningRef.current && !isListening && settings.showAvatarMode && inputText.trim()) {
-          handleSend();
+        handleSend();
       }
       prevListeningRef.current = isListening;
     }
@@ -81,12 +81,12 @@ function App() {
     const newSettings = { ...settings, level };
     setSettings(newSettings);
     setShowLevelSelector(false);
-    
+
     setIsLoading(true);
     await initializeChat(level, newSettings.correctionStrictness, newSettings.showCzechTranslation);
-    
-    const greetingText = level === 'TEST_ME' 
-      ? INITIAL_GREETING_TEST 
+
+    const greetingText = level === 'TEST_ME'
+      ? INITIAL_GREETING_TEST
       : INITIAL_GREETING_LEVEL(level);
 
     setMessages([{
@@ -103,7 +103,7 @@ function App() {
     const prevLevel = settings.level;
     const prevStrictness = settings.correctionStrictness;
     const prevTranslation = settings.showCzechTranslation;
-    
+
     setSettings(newSettings);
 
     // If critical learning parameters changed while in conversation, notify AI
@@ -113,33 +113,33 @@ function App() {
     const translationChanged = prevTranslation !== newSettings.showCzechTranslation;
 
     if (newSettings.interactionMode === 'legacy' && (levelChanged || strictnessChanged || translationChanged) && !showLevelSelector && messages.length > 0) {
-       setIsLoading(true);
-       try {
-         const strictnessLabel = newSettings.correctionStrictness <= 3 ? "Low (Flow)" : newSettings.correctionStrictness <= 7 ? "Balanced" : "High (Strict)";
-         const prompt = `[SYSTEM UPDATE]: 
+      setIsLoading(true);
+      try {
+        const strictnessLabel = newSettings.correctionStrictness <= 3 ? "Low (Flow)" : newSettings.correctionStrictness <= 7 ? "Balanced" : "High (Strict)";
+        const prompt = `[SYSTEM UPDATE]: 
          1. Level: ${newSettings.level}. 
          2. Strictness: ${newSettings.correctionStrictness}/10 (${strictnessLabel}).
          3. Translation Requested: ${newSettings.showCzechTranslation ? "YES" : "NO"}.
          
          Adjust style immediately. If Translation is YES, append '🇨🇿 Translation:' with Czech translation.`;
-         
-         const responseText = await sendMessageToGemini(prompt);
-         
-         const aiMessage: Message = {
+
+        const responseText = await sendMessageToGemini(prompt);
+
+        const aiMessage: Message = {
           id: generateId(),
           role: 'model',
           text: responseText,
           timestamp: Date.now()
         };
-  
+
         setMessages(prev => [...prev, aiMessage]);
         speak(responseText);
 
-       } catch (e) {
-         console.error(e);
-       } finally {
-         setIsLoading(false);
-       }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -149,7 +149,7 @@ function App() {
     const userText = inputText;
     setInputText('');
     resetTranscript();
-    stopSpeaking(); 
+    stopSpeaking();
 
     const newMessage: Message = {
       id: generateId(),
@@ -163,7 +163,7 @@ function App() {
 
     try {
       const responseText = await sendMessageToGemini(userText);
-      
+
       const aiMessage: Message = {
         id: generateId(),
         role: 'model',
@@ -173,7 +173,7 @@ function App() {
 
       setMessages(prev => [...prev, aiMessage]);
       speak(responseText);
-      
+
     } catch (error) {
       console.error("Failed to send message", error);
     } finally {
@@ -183,7 +183,7 @@ function App() {
 
   const toggleListening = () => {
     if (isSpeaking) stopSpeaking();
-    
+
     if (isListening) {
       stopListening();
     } else {
@@ -198,13 +198,13 @@ function App() {
   // Helper to determine the image to show in header
   const getHeaderImage = () => {
     if (settings.avatarType === 'custom' && settings.customAvatarImageUrl) {
-        return settings.customAvatarImageUrl;
+      return settings.customAvatarImageUrl;
     }
     if (settings.avatarType === 'preset-female') {
-        return PRESET_AVATARS.female.imageUrl;
+      return PRESET_AVATARS.female.imageUrl;
     }
     if (settings.avatarType === 'preset-male') {
-        return PRESET_AVATARS.male.imageUrl;
+      return PRESET_AVATARS.male.imageUrl;
     }
     // Default Virtual Avatar Fallback (Picsum or internal asset)
     return "https://picsum.photos/id/64/200/200";
@@ -212,13 +212,13 @@ function App() {
 
   return (
     <div className="flex flex-col h-[100dvh] bg-chatbg overflow-hidden relative">
-      
+
       {showLevelSelector && (
         <LevelSelector onSelect={handleLevelSelect} />
       )}
 
-      <SettingsModal 
-        isOpen={showSettings} 
+      <SettingsModal
+        isOpen={showSettings}
         onClose={() => setShowSettings(false)}
         currentSettings={settings}
         onSave={handleSettingsSave}
@@ -228,28 +228,28 @@ function App() {
       <header className="bg-primary px-4 py-3 text-white shadow-md z-10 flex items-center gap-3">
         <div className="relative">
           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center overflow-hidden border-2 border-white/30">
-              <img src={getHeaderImage()} alt="Avatar" className="w-full h-full object-cover" />
+            <img src={getHeaderImage()} alt="Avatar" className="w-full h-full object-cover" />
           </div>
           <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-300 rounded-full border-2 border-primary"></div>
         </div>
         <div className="flex-1">
-          <h1 className="font-bold text-lg leading-tight">Aria</h1>
+          <h1 className="font-bold text-lg leading-tight">Aria <span className="text-[10px] font-normal opacity-70">{APP_VERSION}</span></h1>
           <p className="text-xs text-emerald-100 opacity-90">
-             {settings.level === 'TEST_ME' ? 'Assessment' : `Level ${settings.level}`} • {settings.showAvatarMode ? 'Avatar' : 'Chat'}
+            {settings.level === 'TEST_ME' ? 'Assessment' : `Level ${settings.level}`} • {settings.showAvatarMode ? 'Avatar' : 'Chat'}
           </p>
         </div>
-        
+
         <div className="flex items-center gap-2">
-           {/* Visualizer in header (only for Legacy mode since Live mode has full avatar) */}
-           {isSpeaking && !settings.showAvatarMode && settings.interactionMode === 'legacy' && (
-             <div className="flex items-center gap-1 mr-2">
-               <span className="animate-bounce bg-white w-1 h-1 rounded-full"></span>
-               <span className="animate-bounce delay-75 bg-white w-1 h-1 rounded-full"></span>
-               <span className="animate-bounce delay-150 bg-white w-1 h-1 rounded-full"></span>
-             </div>
+          {/* Visualizer in header (only for Legacy mode since Live mode has full avatar) */}
+          {isSpeaking && !settings.showAvatarMode && settings.interactionMode === 'legacy' && (
+            <div className="flex items-center gap-1 mr-2">
+              <span className="animate-bounce bg-white w-1 h-1 rounded-full"></span>
+              <span className="animate-bounce delay-75 bg-white w-1 h-1 rounded-full"></span>
+              <span className="animate-bounce delay-150 bg-white w-1 h-1 rounded-full"></span>
+            </div>
           )}
-          
-          <button 
+
+          <button
             onClick={() => setShowSettings(true)}
             className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all active:scale-95"
           >
@@ -262,9 +262,9 @@ function App() {
 
       {/* Main Content Area - Swaps based on mode */}
       <main className={`flex-1 overflow-y-auto no-scrollbar ${settings.showAvatarMode ? 'pb-0' : 'p-4 sm:p-6 pb-24'}`}>
-        
+
         {settings.showAvatarMode ? (
-          <AvatarView 
+          <AvatarView
             latestMessage={messages[messages.length - 1] || null}
             currentInput={inputText}
             isSpeaking={isSpeaking} // Legacy
@@ -276,16 +276,16 @@ function App() {
           <div className="max-w-3xl mx-auto flex flex-col">
             {!showLevelSelector && messages.length === 0 && (
               <div className="text-center mt-10">
-                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
               </div>
             )}
-            
+
             {messages.map((msg) => (
-               <div key={msg.id} onClick={() => msg.role === 'model' && handleSpeakerClick(msg.text)}>
-                  <MessageBubble message={msg} />
-               </div>
+              <div key={msg.id} onClick={() => msg.role === 'model' && handleSpeakerClick(msg.text)}>
+                <MessageBubble message={msg} />
+              </div>
             ))}
-            
+
             {isLoading && messages.length > 0 && (
               <div className="flex justify-start mb-4">
                 <div className="bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-sm border border-gray-100">
@@ -304,7 +304,7 @@ function App() {
 
       {/* Input Area - Only show in Chat Mode OR Legacy Avatar Mode fallback (though design hides it usually) */}
       {!settings.showAvatarMode && (
-        <InputArea 
+        <InputArea
           inputText={inputText}
           setInputText={setInputText}
           onSend={handleSend}

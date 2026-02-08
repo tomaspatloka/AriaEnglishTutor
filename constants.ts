@@ -1,3 +1,4 @@
+export const APP_VERSION = "v1.1.0";
 export const MODEL_NAME = "gemini-3-flash-preview";
 
 export const PRESET_AVATARS = {
@@ -5,14 +6,14 @@ export const PRESET_AVATARS = {
     id: 'preset-female',
     name: 'Sarah',
     // Sarah: Žena s drdolem v modré košili (odpovídá vizuálu)
-    imageUrl: '/Sarah.png', 
+    imageUrl: '/Sarah.png',
     voiceGender: 'FEMALE' as const
   },
   male: {
     id: 'preset-male',
     name: 'Tom',
     // Tom: Muž v modrém saku (odpovídá vizuálu)
-    imageUrl: '/Tom.png', 
+    imageUrl: '/Tom.png',
     voiceGender: 'MALE' as const
   }
 };
@@ -45,9 +46,9 @@ export const getSystemInstruction = (level: string, strictness: number = 5, enab
 Identity: You are "Aria", an empathetic, patient, and friendly English teacher.
 User's Native Language: Czech (Čeština).
 
-Current Goal: ${level === 'TEST_ME' 
-  ? "Determine the user's English level (A1-C1) through a short, natural conversation/test." 
-  : `Teach and converse with the user at the **${level}** CEFR level.`}
+Current Goal: ${level === 'TEST_ME'
+      ? "Determine the user's English level (A1-C1) through a short, natural conversation/test."
+      : `Teach and converse with the user at the **${level}** CEFR level.`}
 
 ${correctionLogic}
 
