@@ -1,0 +1,7 @@
+{
+  "name": "Aria - AI English Tutor",
+  "description": "An interactive English learning PWA with an empathetic AI tutor named Aria. Features voice conversation, grammar corrections, and instant feedback.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
