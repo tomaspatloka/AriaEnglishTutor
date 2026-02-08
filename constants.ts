@@ -18,7 +18,26 @@ export const PRESET_AVATARS = {
   }
 };
 
-export const getSystemInstruction = (level: string, strictness: number = 5, enableTranslation: boolean = false) => {
+import { Scenario } from './types';
+
+export const SCENARIOS: Scenario[] = [
+  { id: 'shopping', icon: '🛒', label: 'Shopping', labelCz: 'Nakupování', role: 'a shop assistant in a clothing/grocery store', context: 'The user is a customer shopping. Help them find items, discuss sizes/colors/prices, suggest alternatives, and handle checkout.' },
+  { id: 'restaurant', icon: '🍽️', label: 'Restaurant', labelCz: 'Restaurace', role: 'a waiter/waitress at a restaurant', context: 'The user is a guest at a restaurant. Take their order, recommend dishes, explain the menu, handle special requests and the bill.' },
+  { id: 'travel', icon: '🧳', label: 'Traveling', labelCz: 'Cestování', role: 'a local travel guide or tourist info assistant', context: 'The user is a tourist asking for directions, recommendations, sightseeing tips, transport info, or hotel bookings.' },
+  { id: 'airport', icon: '✈️', label: 'Airport', labelCz: 'Letiště', role: 'an airport check-in agent or gate attendant', context: 'The user is at an airport. Help with check-in, boarding passes, baggage, gate changes, delays, and customs.' },
+  { id: 'police', icon: '👮', label: 'Police', labelCz: 'Policie', role: 'a police officer', context: 'The user needs to report something (lost item, theft, accident) or is stopped for a routine check. Be professional and helpful.' },
+  { id: 'accident', icon: '🚗', label: 'Car Accident', labelCz: 'Dopravní nehoda', role: 'the other driver involved in a minor car accident', context: 'A minor fender bender has occurred. Exchange information, discuss what happened, deal with insurance details.' },
+  { id: 'gas-station', icon: '⛽', label: 'Gas Station', labelCz: 'Tankování', role: 'a gas station attendant', context: 'The user needs to refuel, pay, ask about car wash, buy snacks, or get directions.' },
+  { id: 'doctor', icon: '🏥', label: 'Doctor', labelCz: 'Lékař', role: 'a doctor or GP at a medical clinic', context: 'The user is a patient describing symptoms. Ask about their condition, suggest treatment, explain medication, schedule follow-ups.' },
+  { id: 'hotel', icon: '🏨', label: 'Hotel', labelCz: 'Hotel', role: 'a hotel receptionist', context: 'The user is checking in/out, asking about amenities, room service, WiFi, complaints, or extending their stay.' },
+  { id: 'pharmacy', icon: '💊', label: 'Pharmacy', labelCz: 'Lékárna', role: 'a pharmacist', context: 'The user needs medicine, has a prescription, or asks about over-the-counter remedies for common issues.' },
+  { id: 'bank', icon: '🏦', label: 'Bank', labelCz: 'Banka', role: 'a bank teller', context: 'The user needs to open an account, exchange currency, report a lost card, or make a transfer.' },
+  { id: 'job-interview', icon: '💼', label: 'Job Interview', labelCz: 'Pohovor', role: 'a hiring manager conducting a job interview', context: 'Interview the user for a position. Ask about experience, skills, motivation. Give feedback on their answers.' },
+  { id: 'phone-call', icon: '📞', label: 'Phone Call', labelCz: 'Telefonát', role: 'a customer service representative on the phone', context: 'The user is calling about an order, complaint, appointment booking, or information request. Handle it professionally.' },
+  { id: 'neighbors', icon: '🏠', label: 'Neighbors', labelCz: 'Sousedé', role: 'a friendly neighbor', context: 'Casual chat between neighbors — noise complaint, borrowing something, community event, small talk about weather/life.' },
+];
+
+export const getSystemInstruction = (level: string, strictness: number = 5, enableTranslation: boolean = false, scenario?: Scenario | null) => {
   let correctionLogic = "";
   let correctionFormat = "";
 
@@ -75,6 +94,16 @@ export const getSystemInstruction = (level: string, strictness: number = 5, enab
     correctionFormat = "\n[💡 Correction (in Czech) — every mistake, detailed]";
   }
 
+  const scenarioBlock = scenario ? `
+**ROLE-PLAY SCENARIO: ${scenario.label}**
+- You are NOT a teacher right now. You are playing the role of **${scenario.role}**.
+- Stay fully in character. Speak and behave as ${scenario.role} would in real life.
+- ${scenario.context}
+- Start the conversation in character (e.g., greet the customer, ask how you can help).
+- Use vocabulary and phrases typical for this situation.
+- Keep the corrections (if any) separate — do NOT break character to correct, add them at the end.
+` : '';
+
   return `
 Identity: You are "Aria", an empathetic, patient, and friendly English teacher.
 User's Native Language: Czech (Čeština).
@@ -83,6 +112,7 @@ Current Goal: ${level === 'TEST_ME'
       ? "Determine the user's English level (A1-C1) through a short, natural conversation/test."
       : `Teach and converse with the user at the **${level}** CEFR level.`}
 
+${scenarioBlock}
 ${correctionLogic}
 
 Core Rules:

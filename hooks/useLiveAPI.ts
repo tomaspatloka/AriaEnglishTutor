@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
-import { AppSettings } from '../types';
-import { getSystemInstruction } from '../constants';
+import { AppSettings, Scenario } from '../types';
+import { getSystemInstruction, SCENARIOS } from '../constants';
 import { base64ToUint8Array, arrayBufferToBase64, convertFloat32ToInt16, decodeAudioData } from '../utils/audioUtils';
 import { incrementUsage } from '../utils/usageUtils';
 
@@ -125,7 +125,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
         model: LIVE_MODEL,
         config: {
           responseModalities: [Modality.AUDIO], // Chceme primárně audio
-          systemInstruction: { parts: [{ text: getSystemInstruction(settings.level, settings.correctionStrictness, settings.showCzechTranslation) }] },
+          systemInstruction: { parts: [{ text: getSystemInstruction(settings.level, settings.correctionStrictness, settings.showCzechTranslation, settings.activeScenario ? SCENARIOS.find(s => s.id === settings.activeScenario) : null) }] },
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } },
           },
@@ -280,13 +280,13 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
   // Auto-reconnect when instruction-affecting settings change while connected
   const prevInstructionKeyRef = useRef('');
   useEffect(() => {
-    const key = `${settings.level}|${settings.correctionStrictness}|${settings.showCzechTranslation}`;
+    const key = `${settings.level}|${settings.correctionStrictness}|${settings.showCzechTranslation}|${settings.activeScenario}`;
     if (prevInstructionKeyRef.current && prevInstructionKeyRef.current !== key && isConnected) {
       console.log("Settings changed while connected — reconnecting Live API...");
       connect();
     }
     prevInstructionKeyRef.current = key;
-  }, [settings.level, settings.correctionStrictness, settings.showCzechTranslation, isConnected, connect]);
+  }, [settings.level, settings.correctionStrictness, settings.showCzechTranslation, settings.activeScenario, isConnected, connect]);
 
   return {
     connect,

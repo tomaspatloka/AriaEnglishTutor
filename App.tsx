@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Message, EnglishLevel, AppSettings } from './types';
-import { INITIAL_GREETING_TEST, INITIAL_GREETING_LEVEL, PRESET_AVATARS, APP_VERSION } from './constants';
+import { Message, EnglishLevel, AppSettings, Scenario } from './types';
+import { INITIAL_GREETING_TEST, INITIAL_GREETING_LEVEL, PRESET_AVATARS, APP_VERSION, SCENARIOS } from './constants';
+import ScenarioSelector from './components/ScenarioSelector';
 import { initializeChat, sendMessageToGemini } from './services/geminiService';
 import MessageBubble from './components/MessageBubble';
 import InputArea from './components/InputArea';
@@ -25,6 +26,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   avatarType: 'preset-female',
   customAvatarImageUrl: null,
   interactionMode: 'live-api',
+  activeScenario: null,
 };
 
 // Simple ID generator
@@ -39,6 +41,7 @@ function App() {
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings(DEFAULT_SETTINGS));
   const [showLevelSelector, setShowLevelSelector] = useState(() => !localStorage.getItem('aria_app_settings'));
   const [showSettings, setShowSettings] = useState(false);
+  const [showScenarios, setShowScenarios] = useState(false);
 
   const [usage, setUsage] = useState(getUsageStats());
 
@@ -136,7 +139,7 @@ function App() {
     setShowLevelSelector(false);
 
     setIsLoading(true);
-    await initializeChat(level, newSettings.correctionStrictness, newSettings.showCzechTranslation);
+    await initializeChat(level, newSettings.correctionStrictness, newSettings.showCzechTranslation, activeScenario);
 
     const greetingText = level === 'TEST_ME'
       ? INITIAL_GREETING_TEST
@@ -157,7 +160,7 @@ function App() {
     if (!showLevelSelector && messages.length === 0) {
       const initPersistentSession = async () => {
         setIsLoading(true);
-        await initializeChat(settings.level, settings.correctionStrictness, settings.showCzechTranslation);
+        await initializeChat(settings.level, settings.correctionStrictness, settings.showCzechTranslation, activeScenario);
 
         const greetingText = settings.level === 'TEST_ME'
           ? INITIAL_GREETING_TEST
@@ -219,6 +222,17 @@ function App() {
       }
     }
   };
+
+  const handleScenarioSelect = (scenario: Scenario | null) => {
+    const newSettings = { ...settings, activeScenario: scenario?.id || null };
+    setSettings(newSettings);
+    saveSettings(newSettings);
+  };
+
+  // Resolve active scenario object from ID
+  const activeScenario = settings.activeScenario
+    ? SCENARIOS.find(s => s.id === settings.activeScenario) || null
+    : null;
 
   const handleSend = async () => {
     if (!inputText.trim()) return;
@@ -301,6 +315,13 @@ function App() {
         onSave={handleSettingsSave}
       />
 
+      <ScenarioSelector
+        isOpen={showScenarios}
+        onClose={() => setShowScenarios(false)}
+        activeScenarioId={settings.activeScenario}
+        onSelect={handleScenarioSelect}
+      />
+
       {/* Header */}
       <header className="bg-primary px-4 py-3 text-white shadow-md z-10 flex items-center gap-3">
         <div className="relative">
@@ -324,7 +345,7 @@ function App() {
             </div>
           </div>
           <p className="text-xs text-emerald-100 opacity-90 truncate">
-            {settings.level === 'TEST_ME' ? 'Assessment' : `Level ${settings.level}`} • {settings.showAvatarMode ? 'Avatar' : 'Chat'}
+            {settings.level === 'TEST_ME' ? 'Assessment' : `Level ${settings.level}`} • {activeScenario ? `${activeScenario.icon} ${activeScenario.label}` : (settings.showAvatarMode ? 'Avatar' : 'Chat')}
           </p>
         </div>
 
@@ -337,6 +358,14 @@ function App() {
               <span className="animate-bounce delay-150 bg-white w-1 h-1 rounded-full"></span>
             </div>
           )}
+
+          <button
+            onClick={() => setShowScenarios(true)}
+            className={`p-2 rounded-full transition-all active:scale-95 ${activeScenario ? 'bg-amber-400/20 ring-2 ring-amber-400/40' : 'bg-white/10 hover:bg-white/20'}`}
+            title="Scenarios"
+          >
+            <span className="text-lg leading-none">{activeScenario ? activeScenario.icon : '🎭'}</span>
+          </button>
 
           <button
             onClick={() => setShowSettings(true)}

@@ -1,16 +1,16 @@
 import { GoogleGenAI, Chat, Content } from "@google/genai";
 import { MODEL_NAME, getSystemInstruction } from "../constants";
-import { Message } from "../types";
+import { Message, Scenario } from "../types";
 import { incrementUsage } from "../utils/usageUtils";
 
 let chatSession: Chat | null = null;
 
-export const initializeChat = async (level: string = 'TEST_ME', strictness: number = 5, enableTranslation: boolean = false): Promise<void> => {
+export const initializeChat = async (level: string = 'TEST_ME', strictness: number = 5, enableTranslation: boolean = false, scenario?: Scenario | null): Promise<void> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   chatSession = ai.chats.create({
     model: MODEL_NAME,
     config: {
-      systemInstruction: getSystemInstruction(level, strictness, enableTranslation),
+      systemInstruction: getSystemInstruction(level, strictness, enableTranslation, scenario),
     },
     history: [],
   });
