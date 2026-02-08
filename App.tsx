@@ -42,6 +42,44 @@ function App() {
 
   const [usage, setUsage] = useState(getUsageStats());
 
+  // PWA Install Prompt
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+  useEffect(() => {
+    // Detect if already installed (standalone mode)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || (window.navigator as any).standalone === true;
+    if (isStandalone) return; // Already installed — never show banner
+
+    // Check if user dismissed banner before
+    const dismissed = localStorage.getItem('aria_pwa_dismissed');
+    if (dismissed) return;
+
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBanner(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setShowInstallBanner(false);
+    }
+    setDeferredPrompt(null);
+  };
+
+  const dismissInstall = () => {
+    setShowInstallBanner(false);
+    localStorage.setItem('aria_pwa_dismissed', '1');
+  };
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -363,6 +401,31 @@ function App() {
           toggleListening={toggleListening}
           isLoading={isLoading}
         />
+      )}
+
+      {/* PWA Install Banner */}
+      {showInstallBanner && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 p-3 safe-bottom">
+          <div className="max-w-md mx-auto bg-slate-900 border border-emerald-500/30 rounded-2xl shadow-[0_-4px_30px_rgba(16,185,129,0.15)] p-4 flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-emerald-400">
+                <path fillRule="evenodd" d="M12 2.25a.75.75 0 01.75.75v11.69l3.22-3.22a.75.75 0 111.06 1.06l-4.5 4.5a.75.75 0 01-1.06 0l-4.5-4.5a.75.75 0 111.06-1.06l3.22 3.22V3a.75.75 0 01.75-.75zm-9 13.5a.75.75 0 01.75.75v2.25a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5V16.5a.75.75 0 011.5 0v2.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V16.5a.75.75 0 01.75-.75z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-bold">Nainstalovat Aria</p>
+              <p className="text-slate-400 text-[11px]">Rychlejší přístup z plochy telefonu</p>
+            </div>
+            <button onClick={handleInstall} className="px-4 py-2 bg-emerald-500 text-white text-xs font-black rounded-xl hover:bg-emerald-400 active:scale-95 transition-all shrink-0 uppercase tracking-wider">
+              Install
+            </button>
+            <button onClick={dismissInstall} className="p-1.5 text-slate-500 hover:text-white transition shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+              </svg>
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -4,8 +4,12 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/aria-icon.svg" />
     <link rel="apple-touch-icon" href="/aria-icon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#10b981" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Aria" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <title>Aria - AI English Tutor</title>
     <link rel="manifest" href="./manifest.json" />
     <script src="https://cdn.tailwindcss.com"></script>
@@ -31,6 +35,13 @@
       .no-scrollbar {
           -ms-overflow-style: none;  /* IE and Edge */
           scrollbar-width: none;  /* Firefox */
+      }
+      /* Safe area for iOS notch/home indicator */
+      .safe-bottom {
+          padding-bottom: max(12px, env(safe-area-inset-bottom));
+      }
+      .safe-top {
+          padding-top: env(safe-area-inset-top);
       }
     </style>
   <script type="importmap">
