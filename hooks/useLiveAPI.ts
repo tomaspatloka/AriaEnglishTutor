@@ -277,6 +277,17 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
     cleanup();
   }, [cleanup]);
 
+  // Auto-reconnect when instruction-affecting settings change while connected
+  const prevInstructionKeyRef = useRef('');
+  useEffect(() => {
+    const key = `${settings.level}|${settings.correctionStrictness}|${settings.showCzechTranslation}`;
+    if (prevInstructionKeyRef.current && prevInstructionKeyRef.current !== key && isConnected) {
+      console.log("Settings changed while connected — reconnecting Live API...");
+      connect();
+    }
+    prevInstructionKeyRef.current = key;
+  }, [settings.level, settings.correctionStrictness, settings.showCzechTranslation, isConnected, connect]);
+
   return {
     connect,
     disconnect,

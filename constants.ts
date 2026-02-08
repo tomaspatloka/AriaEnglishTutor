@@ -20,26 +20,59 @@ export const PRESET_AVATARS = {
 
 export const getSystemInstruction = (level: string, strictness: number = 5, enableTranslation: boolean = false) => {
   let correctionLogic = "";
+  let correctionFormat = "";
 
-  if (strictness <= 3) {
+  if (strictness <= 2) {
+    // 1-2: Úplně volný režim — žádné opravy
     correctionLogic = `
-      **STRICTNESS LEVEL: ${strictness}/10 (Low - Focus on Flow)**
-      - Do NOT correct minor grammar or pronunciation mistakes.
-      - Only correct the user if their meaning is unintelligible.
+      **STRICTNESS LEVEL: ${strictness}/10 (Minimal — Pure Conversation)**
+      - NEVER correct the user's English. No corrections at all.
+      - Even if the user makes obvious grammar mistakes, ignore them completely.
+      - Focus 100% on having a natural, encouraging conversation.
+      - Your only goal is to keep the user talking and feeling confident.
     `;
-  } else if (strictness <= 7) {
+    correctionFormat = ""; // Žádný correction blok
+  } else if (strictness <= 4) {
+    // 3-4: Mírný — jen kritické chyby
     correctionLogic = `
-      **STRICTNESS LEVEL: ${strictness}/10 (Balanced)**
-      - Maintain a natural conversation flow first.
-      - At the bottom of your response, explicitly list the "💡 Corrections" for clear grammar/vocabulary errors.
-      - Explain *why* it was wrong in Czech (Čeština).
+      **STRICTNESS LEVEL: ${strictness}/10 (Low — Focus on Flow)**
+      - Do NOT correct minor grammar, word order, or pronunciation mistakes.
+      - Only correct the user if their meaning is completely unintelligible or they use a wrong word that changes the meaning entirely.
+      - Prioritize natural conversation flow over accuracy.
+      - If you must correct, do it gently inline (e.g., "Oh, you mean X? Great!") — do NOT use the 💡 Correction block.
     `;
+    correctionFormat = ""; // Žádný formální correction blok
+  } else if (strictness <= 6) {
+    // 5-6: Balanced — opravuje jasné chyby
+    correctionLogic = `
+      **STRICTNESS LEVEL: ${strictness}/10 (Balanced — Standard Tutoring)**
+      - Maintain a natural conversation flow first — respond to what the user said.
+      - At the bottom of your response, list "💡 Corrections" ONLY for clear grammar or vocabulary errors.
+      - Explain briefly *why* it was wrong in Czech (Čeština).
+      - Skip tiny mistakes (missing articles, minor preposition errors) — focus on errors that matter.
+    `;
+    correctionFormat = "\n[💡 Correction (in Czech) — only for clear errors]";
+  } else if (strictness <= 8) {
+    // 7-8: Přísný — opravuje většinu chyb
+    correctionLogic = `
+      **STRICTNESS LEVEL: ${strictness}/10 (High — Thorough Tutoring)**
+      - ACT LIKE A SUPPORTIVE BUT THOROUGH TUTOR.
+      - Catch most mistakes including articles, prepositions, tense errors, and word choice.
+      - Provide "💡 Corrections" at the end with Czech explanations for each error.
+      - Also suggest better/more natural phrasing where appropriate.
+    `;
+    correctionFormat = "\n[💡 Correction (in Czech) — thorough]";
   } else {
+    // 9-10: Maximum strict — každou chybu
     correctionLogic = `
-      **STRICTNESS LEVEL: ${strictness}/10 (High - Intensive Tutoring)**
-      - ACT LIKE A STRICT BUT SUPPORTIVE TUTOR.
-      - Catch every mistake. Provide detailed "💡 Corrections" at the end with Czech explanations.
+      **STRICTNESS LEVEL: ${strictness}/10 (Maximum — Intensive Drill)**
+      - ACT LIKE A STRICT BUT SUPPORTIVE LANGUAGE DRILL INSTRUCTOR.
+      - Catch EVERY single mistake — grammar, vocabulary, articles, prepositions, word order, collocations, register, style.
+      - Provide detailed "💡 Corrections" at the end with thorough Czech explanations for each error.
+      - Suggest the correct version AND explain the rule behind it.
+      - If the user's sentence was understandable but not perfectly natural, show the ideal phrasing.
     `;
+    correctionFormat = "\n[💡 Correction (in Czech) — every mistake, detailed]";
   }
 
   return `
@@ -58,8 +91,7 @@ Core Rules:
 
 Output Format:
 [English Response]
-${enableTranslation ? "[🇨🇿 Translation: ...]" : ""}
-[💡 Correction (in Czech)]
+${enableTranslation ? "[🇨🇿 Translation: ...]" : ""}${correctionFormat}
 `;
 };
 

@@ -23,9 +23,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentS
   };
 
   const getStrictnessLabel = (val: number) => {
-    if (val <= 3) return "Chill (Focus on Flow)";
-    if (val <= 7) return "Balanced (Standard)";
-    return "Strict Teacher (Detailed)";
+    if (val <= 2) return "Neopravuje nic";
+    if (val <= 4) return "Jen kritické chyby";
+    if (val <= 6) return "Balanced (Standard)";
+    if (val <= 8) return "Opravuje většinu";
+    return "Drill — každou chybu!";
   };
 
   const handleAvatarSelect = (type: AvatarType) => {

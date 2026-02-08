@@ -154,7 +154,7 @@ function App() {
     if (newSettings.interactionMode === 'legacy' && (levelChanged || strictnessChanged || translationChanged) && !showLevelSelector && messages.length > 0) {
       setIsLoading(true);
       try {
-        const strictnessLabel = newSettings.correctionStrictness <= 3 ? "Low (Flow)" : newSettings.correctionStrictness <= 7 ? "Balanced" : "High (Strict)";
+        const strictnessLabel = newSettings.correctionStrictness <= 2 ? "Minimal (No corrections)" : newSettings.correctionStrictness <= 4 ? "Low (Critical only)" : newSettings.correctionStrictness <= 6 ? "Balanced" : newSettings.correctionStrictness <= 8 ? "High (Thorough)" : "Maximum (Every mistake)";
         const prompt = `[SYSTEM UPDATE]: 
          1. Level: ${newSettings.level}. 
          2. Strictness: ${newSettings.correctionStrictness}/10 (${strictnessLabel}).
