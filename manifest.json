@@ -1,20 +1,22 @@
 {
-  "short_name": "AriaEnglish",
+  "short_name": "Aria",
   "name": "Aria: AI English Tutor",
   "icons": [
     {
-      "src": "https://picsum.photos/192/192",
-      "type": "image/png",
-      "sizes": "192x192"
+      "src": "/aria-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
     },
     {
-      "src": "https://picsum.photos/512/512",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "/aria-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "maskable"
     }
   ],
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#10b981",
-  "background_color": "#ffffff"
+  "background_color": "#0f172a"
 }
