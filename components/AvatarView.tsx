@@ -22,13 +22,15 @@ const AvatarView: React.FC<AvatarViewProps> = ({
   settings 
 }) => {
   // 1. Initialize Live API Hook (always, but only used if mode is 'live-api')
-  const { 
-    connect, 
-    disconnect, 
-    isConnected: liveIsConnected, 
-    isSpeaking: liveIsSpeaking, 
+  const {
+    connect,
+    disconnect,
+    isConnected: liveIsConnected,
+    isSpeaking: liveIsSpeaking,
     volumeLevel,
-    error: liveError 
+    error: liveError,
+    outputTranscript,
+    inputTranscript
   } = useLiveAPI(settings);
 
   // 2. Determine Active Mode
@@ -76,9 +78,21 @@ const AvatarView: React.FC<AvatarViewProps> = ({
         // --- Live API Text Logic ---
         if (liveIsConnected) {
             if (liveIsSpeaking) {
-                setDisplayedText("Aria is speaking...");
+                // Show real-time transcript of what Aria is saying
+                if (settings.showEnglishTranscript && outputTranscript) {
+                    // Strip correction/translation markers for clean display
+                    const cleanText = outputTranscript.split("💡")[0].replace("🇨🇿 Translation:", "").trim();
+                    setDisplayedText(cleanText || "Aria is speaking...");
+                } else {
+                    setDisplayedText("Aria is speaking...");
+                }
             } else {
-                setDisplayedText("Listening...");
+                // Show real-time transcript of what user is saying
+                if (inputTranscript) {
+                    setDisplayedText(inputTranscript);
+                } else {
+                    setDisplayedText("Listening...");
+                }
             }
         } else if (!liveError) {
              setDisplayedText("Tap microphone to start conversation (Live)");
@@ -107,14 +121,17 @@ const AvatarView: React.FC<AvatarViewProps> = ({
         }
     }
   }, [
-      isLiveMode, 
-      liveIsConnected, 
-      liveIsSpeaking, 
-      legacyIsListening, 
-      legacyIsSpeaking, 
-      currentInput, 
-      latestMessage, 
-      liveError
+      isLiveMode,
+      liveIsConnected,
+      liveIsSpeaking,
+      legacyIsListening,
+      legacyIsSpeaking,
+      currentInput,
+      latestMessage,
+      liveError,
+      outputTranscript,
+      inputTranscript,
+      settings.showEnglishTranscript
   ]);
 
 
@@ -202,8 +219,8 @@ const AvatarView: React.FC<AvatarViewProps> = ({
       <div className="flex-shrink-0 z-20 flex flex-col items-center gap-4 pb-8 px-6 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/95 to-transparent pt-12">
         
         {/* Status Text (Scrollable/Multiline if needed) */}
-        <div className="w-full max-w-xl flex flex-col items-center justify-end text-center gap-2 min-h-[60px] max-h-[120px] overflow-hidden">
-             <p className={`text-lg sm:text-xl font-bold leading-tight drop-shadow-lg transition-all duration-300 line-clamp-3 ${activeIsListening ? 'text-white' : 'text-slate-400'}`}>
+        <div className="w-full max-w-xl flex flex-col items-center justify-end text-center gap-2 min-h-[60px] max-h-[160px] overflow-y-auto no-scrollbar">
+             <p className={`text-lg sm:text-xl font-bold leading-tight drop-shadow-lg transition-all duration-300 line-clamp-5 ${activeIsListening ? 'text-white' : 'text-slate-400'}`}>
                {displayedText}
              </p>
              {activeError && <p className="text-red-400 text-xs font-bold uppercase tracking-widest">{activeError}</p>}

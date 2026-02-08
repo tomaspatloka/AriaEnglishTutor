@@ -15,6 +15,8 @@ interface UseLiveAPIReturn {
   isSpeaking: boolean;
   volumeLevel: number; // Pro vizualizaci hlasitosti
   error: string | null;
+  outputTranscript: string; // Real-time transcript of Aria's speech
+  inputTranscript: string; // Real-time transcript of user's speech
 }
 
 export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
@@ -22,6 +24,8 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [outputTranscript, setOutputTranscript] = useState('');
+  const [inputTranscript, setInputTranscript] = useState('');
 
   // Refs pro audio komponenty
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -78,6 +82,8 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
     setIsConnected(false);
     setIsSpeaking(false);
     setVolumeLevel(0);
+    setOutputTranscript('');
+    setInputTranscript('');
     nextStartTimeRef.current = 0;
   }, []);
 
@@ -123,10 +129,8 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } },
           },
-          // Pro tuto verzi vypínáme transkripci pro snížení latence, 
-          // pokud ji nepotřebujeme nutně v UI v reálném čase.
           inputAudioTranscription: {},
-          // outputAudioTranscription: {}, 
+          outputAudioTranscription: {},
         },
         callbacks: {
           onopen: () => {
@@ -176,6 +180,30 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
           },
           onmessage: async (msg: LiveServerMessage) => {
             const serverContent = msg.serverContent;
+
+            // --- Zpracování transkripce ---
+            const outputText = (serverContent as any)?.outputTranscription?.text;
+            if (outputText) {
+              setOutputTranscript(prev => prev + outputText);
+            }
+
+            const inputText = (serverContent as any)?.inputTranscription?.text;
+            if (inputText) {
+              setInputTranscript(prev => prev + inputText);
+            }
+
+            // Reset transcripts when a new model turn starts
+            if (serverContent?.modelTurn) {
+              // New model turn — reset input transcript (user finished speaking)
+              if (serverContent.modelTurn.parts && serverContent.modelTurn.parts.length > 0) {
+                // Only reset output on first audio chunk of a new turn
+                const isFirstChunk = audioSourcesRef.current.size === 0;
+                if (isFirstChunk) {
+                  setOutputTranscript('');
+                  setInputTranscript('');
+                }
+              }
+            }
 
             // --- Zpracování Audia od modelu ---
             const audioData = serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
@@ -255,6 +283,8 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
     isConnected,
     isSpeaking,
     volumeLevel,
-    error
+    error,
+    outputTranscript,
+    inputTranscript
   };
 };
