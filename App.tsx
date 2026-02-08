@@ -244,9 +244,20 @@ function App() {
           </div>
           <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-300 rounded-full border-2 border-primary"></div>
         </div>
-        <div className="flex-1">
-          <h1 className="font-bold text-lg leading-tight">Aria <span className="text-[10px] font-normal opacity-70">{APP_VERSION}</span></h1>
-          <p className="text-xs text-emerald-100 opacity-90">
+        <div className="flex-1 overflow-hidden">
+          <div className="flex items-center justify-between mb-0.5">
+            <h1 className="font-bold text-lg leading-tight truncate">Aria <span className="text-[10px] font-normal opacity-70">{APP_VERSION}</span></h1>
+            <div className="flex flex-col items-end mr-1 shrink-0">
+              <span className="text-[8px] font-black uppercase tracking-tighter opacity-50">API Usage</span>
+              <div className="w-12 h-1 bg-white/20 rounded-full overflow-hidden mt-0.5">
+                <div
+                  className={`h-full transition-all duration-500 ${usage.percent > 90 ? 'bg-red-400' : usage.percent > 70 ? 'bg-orange-400' : 'bg-emerald-300'}`}
+                  style={{ width: `${usage.percent}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-emerald-100 opacity-90 truncate">
             {settings.level === 'TEST_ME' ? 'Assessment' : `Level ${settings.level}`} • {settings.showAvatarMode ? 'Avatar' : 'Chat'}
           </p>
         </div>
