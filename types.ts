@@ -54,3 +54,27 @@ export interface AppSettings {
   interactionMode: InteractionMode; // Switch between Gemini 2.5 Live and Classic STT/TTS
   activeScenario: string | null; // Scenario ID or null for free conversation
 }
+
+export interface SessionSummary {
+  strengths: string[];
+  commonErrors: string[];
+  practiceSentences: string[];
+}
+
+export interface LessonHistoryEntry {
+  id: string;
+  endedAt: number;
+  mode: InteractionMode;
+  durationMs: number;
+  speakingMs: number;
+  correctionCount: number;
+  summary: SessionSummary;
+}
+
+export interface ProgressStats {
+  totalLessons: number;
+  streakDays: number;
+  totalSpeakingMs: number;
+  averageCorrectionsLast3: number;
+  correctionTrend: 'improving' | 'worsening' | 'stable' | 'insufficient-data';
+}

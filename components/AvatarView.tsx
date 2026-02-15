@@ -9,10 +9,18 @@ interface AvatarViewProps {
   currentInput: string; // For Legacy User Input display
   isSpeaking: boolean; // Legacy prop (TTS)
   isListening: boolean; // Legacy prop (STT)
+  legacyIsProcessing: boolean;
   legacyError: string | null;
   toggleListening: () => void; // Legacy prop
   settings: AppSettings;
   restartToken: number;
+  onLiveStateChange?: (state: {
+    isConnected: boolean;
+    isConnecting: boolean;
+    isSpeaking: boolean;
+    networkSlow: boolean;
+    isUserTalking: boolean;
+  }) => void;
 }
 
 const AvatarView: React.FC<AvatarViewProps> = ({ 
@@ -20,10 +28,12 @@ const AvatarView: React.FC<AvatarViewProps> = ({
   currentInput,
   isSpeaking: legacyIsSpeaking,
   isListening: legacyIsListening,
+  legacyIsProcessing,
   legacyError,
   toggleListening: legacyToggleListening,
   settings,
-  restartToken
+  restartToken,
+  onLiveStateChange
 }) => {
   // 1. Initialize Live API Hook (always, but only used if mode is 'live-api')
   const {
@@ -32,6 +42,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
     isConnected: liveIsConnected,
     isConnecting: liveIsConnecting,
     isSpeaking: liveIsSpeaking,
+    networkSlow,
     volumeLevel,
     error: liveError,
     outputTranscript,
@@ -45,6 +56,25 @@ const AvatarView: React.FC<AvatarViewProps> = ({
   const activeIsSpeaking = isLiveMode ? liveIsSpeaking : legacyIsSpeaking;
   const activeIsListening = isLiveMode ? (liveIsConnected || liveIsConnecting) : legacyIsListening;
   const activeError = isLiveMode ? liveError : legacyError;
+  const liveUserTalking = isLiveMode && liveIsConnected && !liveIsSpeaking && volumeLevel > 0.03;
+
+  const showMicOn = isLiveMode ? (liveIsConnected || liveIsConnecting) : legacyIsListening;
+  const showAriaListening = isLiveMode
+    ? liveUserTalking || (!!inputTranscript && !liveIsSpeaking)
+    : legacyIsListening;
+  const showAriaThinking = isLiveMode
+    ? liveIsConnected && !liveIsSpeaking && !showAriaListening
+    : legacyIsProcessing;
+
+  useEffect(() => {
+    onLiveStateChange?.({
+      isConnected: liveIsConnected,
+      isConnecting: liveIsConnecting,
+      isSpeaking: liveIsSpeaking,
+      networkSlow,
+      isUserTalking: liveUserTalking,
+    });
+  }, [liveIsConnected, liveIsConnecting, liveIsSpeaking, networkSlow, liveUserTalking, onLiveStateChange]);
 
   const [displayedText, setDisplayedText] = useState("Tap microphone to start conversation");
   const [czechTranslation, setCzechTranslation] = useState('');
@@ -97,18 +127,22 @@ const AvatarView: React.FC<AvatarViewProps> = ({
 
   // Helper: Extract English text and Czech translation from raw transcript
   const parseTranscript = (raw: string): { english: string; czech: string } => {
-    // Remove corrections section
-    const withoutCorrections = raw.split("💡")[0];
+    // Remove correction part if present ("💡 Correction" or plain "Correction:")
+    const correctionMatch = raw.match(/(?:💡\s*)?Correction\s*:/i);
+    const withoutCorrections = correctionMatch && typeof correctionMatch.index === 'number'
+      ? raw.substring(0, correctionMatch.index)
+      : raw;
 
-    // Split on Czech translation marker
-    const czechMarkerIndex = withoutCorrections.indexOf("🇨🇿");
-    if (czechMarkerIndex !== -1) {
-      const english = withoutCorrections.substring(0, czechMarkerIndex).trim();
-      let czech = withoutCorrections.substring(czechMarkerIndex).trim();
-      // Remove the marker prefix variants
-      czech = czech.replace(/^🇨🇿\s*(Translation|Překlad)\s*:\s*/i, '').trim();
+    // Find translation marker ("🇨🇿 Translation:" or plain "Translation:"/"Překlad:")
+    const translationMatch = withoutCorrections.match(/(?:🇨🇿\s*)?(Translation|Překlad)\s*:/i);
+    if (translationMatch && typeof translationMatch.index === 'number') {
+      const english = withoutCorrections.substring(0, translationMatch.index).trim();
+      const czech = withoutCorrections
+        .substring(translationMatch.index + translationMatch[0].length)
+        .trim();
       return { english, czech };
     }
+
     return { english: withoutCorrections.trim(), czech: '' };
   };
 
@@ -290,8 +324,31 @@ const AvatarView: React.FC<AvatarViewProps> = ({
                  {czechTranslation}
                </p>
              )}
-             {activeError && <p className="text-red-400 text-xs font-bold uppercase tracking-widest">{activeError}</p>}
-        </div>
+              {activeError && <p className="text-red-400 text-xs font-bold uppercase tracking-widest">{activeError}</p>}
+
+              <div className="flex flex-wrap justify-center gap-1.5 pt-1">
+                {showMicOn && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black tracking-wide bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                    Mic on
+                  </span>
+                )}
+                {showAriaListening && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black tracking-wide bg-red-500/20 text-red-300 border border-red-400/30">
+                    Aria posloucha
+                  </span>
+                )}
+                {showAriaThinking && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black tracking-wide bg-sky-500/20 text-sky-300 border border-sky-400/30">
+                    Aria premysli
+                  </span>
+                )}
+                {networkSlow && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black tracking-wide bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                    Sit pomala
+                  </span>
+                )}
+              </div>
+         </div>
 
         {/* Mic Button */}
         <div className="flex flex-col items-center gap-3">

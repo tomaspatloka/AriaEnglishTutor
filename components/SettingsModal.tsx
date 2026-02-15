@@ -7,7 +7,7 @@ interface SettingsModalProps {
   onClose: () => void;
   currentSettings: AppSettings;
   onSave: (newSettings: AppSettings) => void;
-  onRestartSession: (newSettings: AppSettings) => void;
+  onRestartSession: (newSettings: AppSettings) => void | Promise<void>;
 }
 
 const levels: EnglishLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];

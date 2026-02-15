@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { AppSettings } from '../types';
 import { getSystemInstruction, SCENARIOS } from '../constants';
@@ -14,6 +14,7 @@ interface UseLiveAPIReturn {
   isConnected: boolean;
   isConnecting: boolean;
   isSpeaking: boolean;
+  networkSlow: boolean;
   volumeLevel: number; // Pro vizualizaci hlasitosti
   error: string | null;
   outputTranscript: string; // Real-time transcript of Aria's speech
@@ -24,6 +25,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [networkSlow, setNetworkSlow] = useState(false);
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [outputTranscript, setOutputTranscript] = useState('');
@@ -47,6 +49,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
   const manualDisconnectRef = useRef(false);
   const connectStartedAtRef = useRef(0);
   const activeConnectionIdRef = useRef(0);
+  const lastServerActivityRef = useRef(0);
 
   const mapLiveError = useCallback((e: any): string => {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
@@ -120,6 +123,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
     setIsConnecting(false);
     isConnectingRef.current = false;
     setIsSpeaking(false);
+    setNetworkSlow(false);
     setVolumeLevel(0);
     setOutputTranscript('');
     setInputTranscript('');
@@ -188,6 +192,8 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
             setIsConnecting(false);
             isConnectingRef.current = false;
             setIsConnected(true);
+            setNetworkSlow(false);
+            lastServerActivityRef.current = Date.now();
             incrementUsage();
             console.log("Gemini Live Connected 🟢");
 
@@ -235,6 +241,8 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
           onmessage: async (msg: LiveServerMessage) => {
             if (connectionId !== activeConnectionIdRef.current) return;
             const serverContent = msg.serverContent;
+            lastServerActivityRef.current = Date.now();
+            setNetworkSlow(false);
 
             // --- Zpracování transkripce ---
             const outputText = (serverContent as any)?.outputTranscription?.text;
@@ -315,6 +323,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
             isConnectingRef.current = false;
             setIsConnected(false);
             setIsSpeaking(false);
+            setNetworkSlow(false);
 
             if (!wasManualDisconnect && Date.now() - connectStartedAtRef.current < 3000) {
               setError('Live session was closed immediately. Try again, or switch to Standard mode.');
@@ -325,6 +334,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
             if (connectionId !== activeConnectionIdRef.current) return;
             setIsConnecting(false);
             isConnectingRef.current = false;
+            setNetworkSlow(false);
             setError(mapLiveError(e));
             cleanup();
           }
@@ -337,10 +347,27 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
       console.error(e);
       setIsConnecting(false);
       isConnectingRef.current = false;
+      setNetworkSlow(false);
       setError(mapLiveError(e));
       setIsConnected(false);
     }
   }, [cleanup, isConnected, mapLiveError, settings]);
+
+  useEffect(() => {
+    if (!isConnected) {
+      setNetworkSlow(false);
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      const silenceMs = Date.now() - lastServerActivityRef.current;
+      if (silenceMs > 7000 && !isSpeaking) {
+        setNetworkSlow(true);
+      }
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [isConnected, isSpeaking]);
 
   const disconnect = useCallback(() => {
     manualDisconnectRef.current = true;
@@ -353,6 +380,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
     isConnected,
     isConnecting,
     isSpeaking,
+    networkSlow,
     volumeLevel,
     error,
     outputTranscript,

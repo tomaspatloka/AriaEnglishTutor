@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Message, EnglishLevel, AppSettings, Scenario } from './types';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Message, EnglishLevel, AppSettings, Scenario, SessionSummary, LessonHistoryEntry } from './types';
 import { INITIAL_GREETING_TEST, INITIAL_GREETING_LEVEL, PRESET_AVATARS, APP_VERSION, SCENARIOS } from './constants';
 import ScenarioSelector from './components/ScenarioSelector';
-import { initializeChat, sendMessageToGemini } from './services/geminiService';
+import { initializeChat, sendMessageToGemini, generateSessionSummary, generateRetrySentence, generatePracticeVariants } from './services/geminiService';
 import MessageBubble from './components/MessageBubble';
 import InputArea from './components/InputArea';
 import LevelSelector from './components/LevelSelector';
 import SettingsModal from './components/SettingsModal';
 import AvatarView from './components/AvatarView';
+import ProgressModal from './components/ProgressModal';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useTextToSpeech } from './hooks/useTextToSpeech';
 import { getUsageStats } from './utils/usageUtils';
 import { loadSettings, saveSettings } from './utils/settingsUtils';
+import { appendLessonHistory, getProgressStats, loadLessonHistory } from './utils/sessionHistoryUtils';
 
 const DEFAULT_SETTINGS: AppSettings = {
   level: 'TEST_ME',
@@ -46,6 +48,22 @@ function App() {
 
   const [usage, setUsage] = useState(getUsageStats());
   const [restartToken, setRestartToken] = useState(0);
+  const [showProgress, setShowProgress] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [latestSummary, setLatestSummary] = useState<SessionSummary | null>(null);
+  const [lessonHistory, setLessonHistory] = useState<LessonHistoryEntry[]>(() => loadLessonHistory());
+  const [liveRuntimeState, setLiveRuntimeState] = useState({
+    isConnected: false,
+    isConnecting: false,
+    isSpeaking: false,
+    networkSlow: false,
+    isUserTalking: false,
+  });
+
+  const sessionStartedAtRef = useRef<number>(Date.now());
+  const speakingMsRef = useRef(0);
+  const voiceActiveStartedAtRef = useRef<number | null>(null);
+  const prevLiveConnectedRef = useRef(false);
 
   // PWA Install Prompt
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -86,6 +104,7 @@ function App() {
   };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const progressStats = useMemo(() => getProgressStats(lessonHistory), [lessonHistory]);
 
   const {
     isListening,
@@ -135,11 +154,110 @@ function App() {
     return () => window.removeEventListener('aria-usage-updated', handleUsageUpdate);
   }, []);
 
+  useEffect(() => {
+    const voiceActive = isListening || liveRuntimeState.isUserTalking || liveRuntimeState.isSpeaking;
+    if (voiceActive && voiceActiveStartedAtRef.current === null) {
+      voiceActiveStartedAtRef.current = Date.now();
+      return;
+    }
+    if (!voiceActive && voiceActiveStartedAtRef.current !== null) {
+      speakingMsRef.current += Date.now() - voiceActiveStartedAtRef.current;
+      voiceActiveStartedAtRef.current = null;
+    }
+  }, [isListening, liveRuntimeState.isConnected]);
+
+  const resetSessionTracking = () => {
+    sessionStartedAtRef.current = Date.now();
+    speakingMsRef.current = 0;
+    voiceActiveStartedAtRef.current = null;
+    setLatestSummary(null);
+  };
+
+  const getCurrentSpeakingMs = () => {
+    if (voiceActiveStartedAtRef.current !== null) {
+      return speakingMsRef.current + (Date.now() - voiceActiveStartedAtRef.current);
+    }
+    return speakingMsRef.current;
+  };
+
+  const getCorrectionCount = (items: Message[]) => items.reduce((acc, m) => {
+    if (m.role !== 'model') return acc;
+    return acc + (/(Correction)/i.test(m.text) ? 1 : 0);
+  }, 0);
+
+  const summaryToMessage = (summary: SessionSummary) => {
+    return [
+      "Session summary:",
+      "What was good:",
+      ...summary.strengths.map((s, idx) => `${idx + 1}. ${s}`),
+      "",
+      "Top 3 mistakes:",
+      ...summary.commonErrors.map((s, idx) => `${idx + 1}. ${s}`),
+      "",
+      "Practice 3 sentences:",
+      ...summary.practiceSentences.map((s, idx) => `${idx + 1}. ${s}`),
+    ].join('\n');
+  };
+
+  const finalizeSession = async () => {
+    const sessionMessages = messages.filter(m => m.timestamp >= sessionStartedAtRef.current);
+    if (sessionMessages.length === 0) return null;
+    if (isSummarizing) return null;
+    const userMessages = sessionMessages.filter(m => m.role === 'user');
+    if (userMessages.length === 0) return null;
+
+    setIsSummarizing(true);
+    try {
+      const summary = await generateSessionSummary(sessionMessages);
+      setLatestSummary(summary);
+
+      const endedAt = Date.now();
+      const entry: LessonHistoryEntry = {
+        id: generateId(),
+        endedAt,
+        mode: settings.interactionMode,
+        durationMs: Math.max(0, endedAt - sessionStartedAtRef.current),
+        speakingMs: Math.max(0, getCurrentSpeakingMs()),
+        correctionCount: getCorrectionCount(sessionMessages),
+        summary,
+      };
+
+      const updatedHistory = appendLessonHistory(entry);
+      setLessonHistory(updatedHistory);
+      return summary;
+    } catch (error) {
+      console.error('Failed to generate session summary', error);
+      return null;
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
+  useEffect(() => {
+    const wasConnected = prevLiveConnectedRef.current;
+    const isNowConnected = liveRuntimeState.isConnected;
+
+    if (settings.interactionMode === 'live-api' && wasConnected && !isNowConnected) {
+      finalizeSession().then((summary) => {
+        if (summary) {
+          setShowProgress(true);
+        }
+      }).finally(() => {
+        if (!prevLiveConnectedRef.current) {
+          resetSessionTracking();
+        }
+      });
+    }
+
+    prevLiveConnectedRef.current = isNowConnected;
+  }, [liveRuntimeState.isConnected, settings.interactionMode]);
+
   const handleLevelSelect = async (level: EnglishLevel) => {
     const newSettings = { ...settings, level };
     setSettings(newSettings);
     saveSettings(newSettings);
     setShowLevelSelector(false);
+    resetSessionTracking();
 
     setIsLoading(true);
     await initializeChat(level, newSettings.correctionStrictness, newSettings.showCzechTranslation, activeScenario);
@@ -175,6 +293,7 @@ function App() {
           text: greetingText,
           timestamp: Date.now()
         }]);
+        resetSessionTracking();
         setIsLoading(false);
       };
       initPersistentSession();
@@ -204,7 +323,7 @@ function App() {
          2. Strictness: ${newSettings.correctionStrictness}/10 (${strictnessLabel}).
          3. Translation Requested: ${newSettings.showCzechTranslation ? "YES" : "NO"}.
          
-         Adjust style immediately. If Translation is YES, append '🇨🇿 Translation:' with Czech translation.`;
+         Adjust style immediately. If Translation is YES, append 'Translation:' with Czech translation.`;
 
         const responseText = await sendMessageToGemini(prompt);
 
@@ -231,6 +350,11 @@ function App() {
       ? SCENARIOS.find(s => s.id === newSettings.activeScenario) || null
       : null;
 
+    const endedSummary = await finalizeSession();
+    if (endedSummary) {
+      setShowProgress(true);
+    }
+
     setSettings(newSettings);
     saveSettings(newSettings);
 
@@ -242,15 +366,16 @@ function App() {
     }
 
     setRestartToken(prev => prev + 1);
+    resetSessionTracking();
 
     if (showLevelSelector) {
       return;
     }
 
-    if (newSettings.interactionMode !== 'legacy') {
-      setMessages([]);
-      return;
-    }
+      if (newSettings.interactionMode !== 'legacy') {
+        setMessages([]);
+        return;
+      }
 
     setIsLoading(true);
     try {
@@ -271,6 +396,7 @@ function App() {
         text: greetingText,
         timestamp: Date.now()
       }]);
+      resetSessionTracking();
     } catch (error) {
       console.error('Failed to restart session', error);
     } finally {
@@ -379,6 +505,80 @@ Return to normal English tutor behavior in your next response.`;
     speakManual(text);
   };
 
+  const findPreviousUserMessage = (modelMessageId: string): Message | null => {
+    const modelIdx = messages.findIndex(m => m.id === modelMessageId);
+    if (modelIdx <= 0) return null;
+    for (let i = modelIdx - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') return messages[i];
+    }
+    return null;
+  };
+
+  const handleRetryCorrected = async (modelMessage: Message) => {
+    const userMessage = findPreviousUserMessage(modelMessage.id);
+    if (!userMessage) return;
+
+    setIsLoading(true);
+    try {
+      const correctedSentence = await generateRetrySentence(userMessage.text);
+      setInputText(correctedSentence);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: generateId(),
+          role: 'model',
+          text: `Try this corrected sentence:\n${correctedSentence}`,
+          timestamp: Date.now(),
+        },
+      ]);
+      speakManual(correctedSentence);
+    } catch (error) {
+      console.error('Failed to generate corrected retry sentence', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePracticeVariants = async (modelMessage: Message) => {
+    const userMessage = findPreviousUserMessage(modelMessage.id);
+    if (!userMessage) return;
+
+    setIsLoading(true);
+    try {
+      const variants = await generatePracticeVariants(userMessage.text);
+      const text = ['Practice variants:', ...variants.map((v, i) => `${i + 1}. ${v}`)].join('\n');
+      setMessages(prev => [
+        ...prev,
+        {
+          id: generateId(),
+          role: 'model',
+          text,
+          timestamp: Date.now(),
+        },
+      ]);
+    } catch (error) {
+      console.error('Failed to generate practice variants', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerateSummaryNow = async () => {
+    const summary = await finalizeSession();
+    if (!summary) return;
+
+    setMessages(prev => [
+      ...prev,
+      {
+        id: generateId(),
+        role: 'model',
+        text: summaryToMessage(summary),
+        timestamp: Date.now(),
+      },
+    ]);
+    resetSessionTracking();
+  };
+
   // Helper to determine the image to show in header
   const getHeaderImage = () => {
     if (settings.avatarType === 'custom' && settings.customAvatarImageUrl) {
@@ -407,6 +607,16 @@ Return to normal English tutor behavior in your next response.`;
         currentSettings={settings}
         onSave={handleSettingsSave}
         onRestartSession={restartSessionNow}
+      />
+
+      <ProgressModal
+        isOpen={showProgress}
+        onClose={() => setShowProgress(false)}
+        onGenerateSummary={handleGenerateSummaryNow}
+        isGeneratingSummary={isSummarizing}
+        latestSummary={latestSummary}
+        history={lessonHistory}
+        stats={progressStats}
       />
 
       <ScenarioSelector
@@ -473,6 +683,14 @@ Return to normal English tutor behavior in your next response.`;
           </button>
 
           <button
+            onClick={() => setShowProgress(true)}
+            className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all active:scale-95"
+            title="Progress"
+          >
+            <span className="text-lg leading-none">PR</span>
+          </button>
+
+          <button
             onClick={() => setShowSettings(true)}
             className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all active:scale-95"
           >
@@ -524,9 +742,11 @@ Return to normal English tutor behavior in your next response.`;
             currentInput={inputText}
             isSpeaking={isSpeaking} // Legacy
             isListening={isListening} // Legacy
+            legacyIsProcessing={isLoading}
             legacyError={speechError}
             toggleListening={toggleListening} // Legacy
             settings={settings}
+            onLiveStateChange={setLiveRuntimeState}
           />
         ) : (
           <div className="max-w-3xl mx-auto flex flex-col">
@@ -538,7 +758,11 @@ Return to normal English tutor behavior in your next response.`;
 
             {messages.map((msg) => (
               <div key={msg.id} onClick={() => msg.role === 'model' && handleSpeakerClick(msg.text)}>
-                <MessageBubble message={msg} />
+                <MessageBubble
+                  message={msg}
+                  onRetryCorrected={handleRetryCorrected}
+                  onPracticeVariants={handlePracticeVariants}
+                />
               </div>
             ))}
 
