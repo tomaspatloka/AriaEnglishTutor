@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AppSettings, EnglishLevel, AvatarType } from '../types';
-import { PRESET_AVATARS, APP_VERSION } from '../constants';
+import { PRESET_AVATARS, APP_VERSION, RELEASE_HISTORY } from '../constants';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -306,7 +306,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentS
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-emerald-400">
                 <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.464-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clipRule="evenodd" />
               </svg>
-              Info o aplikaci
+              O aplikaci a historie verzi
             </h3>
 
             <div className="space-y-4 text-sm relative z-10">
@@ -322,6 +322,32 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentS
                 <div>
                   <span className="block text-[10px] font-black uppercase text-slate-500 tracking-widest">Autor</span>
                   <p className="font-bold">Tomas Patloka</p>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-800">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-black text-white">Co je nove v {APP_VERSION}</h4>
+                  <span className="text-[10px] uppercase tracking-widest text-slate-400">Release notes</span>
+                </div>
+
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1 no-scrollbar">
+                  {RELEASE_HISTORY.map((release) => (
+                    <article key={release.version} className="rounded-2xl border border-slate-700 bg-slate-800/60 p-3">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-emerald-300 font-black text-xs">{release.version}</span>
+                        <span className="text-[10px] text-slate-400">{release.date}</span>
+                      </div>
+                      <p className="text-xs font-semibold text-white">{release.title}</p>
+                      <div className="mt-2 space-y-1">
+                        {release.changes.map((item, index) => (
+                          <p key={`${release.version}-${index}`} className="text-[11px] text-slate-300 leading-relaxed">
+                            - {item}
+                          </p>
+                        ))}
+                      </div>
+                    </article>
+                  ))}
                 </div>
               </div>
             </div>

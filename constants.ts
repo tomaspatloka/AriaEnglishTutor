@@ -1,4 +1,38 @@
-export const APP_VERSION = "v1.1.0";
+export const APP_VERSION = "v1.2.0";
+export const RELEASE_HISTORY = [
+  {
+    version: "v1.2.0",
+    date: "2026-02-15",
+    title: "Session Progress + Live UX update",
+    changes: [
+      "Session summary po hovoru: co bylo dobre, 3 nejcastejsi chyby, 3 vety k treninku.",
+      "Historie lekci s trendem chyb, streakem a casem mluveni.",
+      "Realtime stavy v Live modu: Mic on, Aria posloucha, Aria premysli, Sit pomala.",
+      "One-tap opravy: Zopakovat spravne a Procvicit 3 varianty.",
+      "Stabilizace ukonceni/obnoveni Live session po restartu.",
+    ],
+  },
+  {
+    version: "v1.1.0",
+    date: "2026-02-10",
+    title: "Live conversation mode and scenario expansion",
+    changes: [
+      "Gemini Live audio rezim (real-time conversation).",
+      "Vice role-play scenaru pro prakticky trening.",
+      "Restart session a force update workflow v nastaveni.",
+    ],
+  },
+  {
+    version: "v1.0.0",
+    date: "2026-01-30",
+    title: "Initial public release",
+    changes: [
+      "Zakladni chat + avatar rezim pro konverzaci.",
+      "Nastaveni urovne, strictness a prekladu.",
+      "Statistika usage a zakladni hlasovy workflow.",
+    ],
+  },
+];
 export const MODEL_NAME = "gemini-3-flash-preview";
 
 export const PRESET_AVATARS = {
