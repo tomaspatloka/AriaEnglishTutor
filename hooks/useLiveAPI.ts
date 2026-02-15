@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { AppSettings } from '../types';
 import { getSystemInstruction, SCENARIOS } from '../constants';
@@ -12,6 +12,7 @@ interface UseLiveAPIReturn {
   connect: () => Promise<void>;
   disconnect: () => void;
   isConnected: boolean;
+  isConnecting: boolean;
   isSpeaking: boolean;
   volumeLevel: number; // Pro vizualizaci hlasitosti
   error: string | null;
@@ -21,6 +22,7 @@ interface UseLiveAPIReturn {
 
 export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
   const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +43,10 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
   // Refs pro přehrávání audia
   const nextStartTimeRef = useRef<number>(0);
   const audioSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
+  const isConnectingRef = useRef(false);
+  const manualDisconnectRef = useRef(false);
+  const connectStartedAtRef = useRef(0);
+  const activeConnectionIdRef = useRef(0);
 
   const mapLiveError = useCallback((e: any): string => {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
@@ -111,6 +117,8 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
     currentSessionRef.current = null;
 
     setIsConnected(false);
+    setIsConnecting(false);
+    isConnectingRef.current = false;
     setIsSpeaking(false);
     setVolumeLevel(0);
     setOutputTranscript('');
@@ -119,8 +127,19 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
   }, []);
 
   const connect = useCallback(async () => {
-    setError(null);
+    if (isConnected || isConnectingRef.current) {
+      return;
+    }
+
+    manualDisconnectRef.current = false;
+    connectStartedAtRef.current = Date.now();
+    const connectionId = connectStartedAtRef.current;
+    activeConnectionIdRef.current = connectionId;
+
     cleanup(); // Ujistíme se, že začínáme s čistým štítem
+    setError(null);
+    setIsConnecting(true);
+    isConnectingRef.current = true;
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -165,6 +184,9 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
         },
         callbacks: {
           onopen: () => {
+            if (connectionId !== activeConnectionIdRef.current) return;
+            setIsConnecting(false);
+            isConnectingRef.current = false;
             setIsConnected(true);
             incrementUsage();
             console.log("Gemini Live Connected 🟢");
@@ -211,6 +233,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
             scriptProcessor.connect(inputCtx.destination);
           },
           onmessage: async (msg: LiveServerMessage) => {
+            if (connectionId !== activeConnectionIdRef.current) return;
             const serverContent = msg.serverContent;
 
             // --- Zpracování transkripce ---
@@ -284,12 +307,24 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
             }
           },
           onclose: () => {
-            console.log("Gemini Live Closed 🔴");
+            if (connectionId !== activeConnectionIdRef.current) return;
+            console.log("Gemini Live Closed");
+            const wasManualDisconnect = manualDisconnectRef.current;
+            manualDisconnectRef.current = false;
+            setIsConnecting(false);
+            isConnectingRef.current = false;
             setIsConnected(false);
             setIsSpeaking(false);
+
+            if (!wasManualDisconnect && Date.now() - connectStartedAtRef.current < 3000) {
+              setError('Live session was closed immediately. Try again, or switch to Standard mode.');
+            }
           },
           onerror: (e) => {
             console.error("Gemini Live Error", e);
+            if (connectionId !== activeConnectionIdRef.current) return;
+            setIsConnecting(false);
+            isConnectingRef.current = false;
             setError(mapLiveError(e));
             cleanup();
           }
@@ -300,30 +335,23 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
 
     } catch (e: any) {
       console.error(e);
+      setIsConnecting(false);
+      isConnectingRef.current = false;
       setError(mapLiveError(e));
       setIsConnected(false);
     }
-  }, [cleanup, mapLiveError, settings]);
+  }, [cleanup, isConnected, mapLiveError, settings]);
 
   const disconnect = useCallback(() => {
+    manualDisconnectRef.current = true;
     cleanup();
   }, [cleanup]);
-
-  // Auto-reconnect when instruction-affecting settings change while connected
-  const prevInstructionKeyRef = useRef('');
-  useEffect(() => {
-    const key = `${settings.level}|${settings.correctionStrictness}|${settings.showCzechTranslation}|${settings.activeScenario}`;
-    if (prevInstructionKeyRef.current && prevInstructionKeyRef.current !== key && isConnected) {
-      console.log("Settings changed while connected — reconnecting Live API...");
-      connect();
-    }
-    prevInstructionKeyRef.current = key;
-  }, [settings.level, settings.correctionStrictness, settings.showCzechTranslation, settings.activeScenario, isConnected, connect]);
 
   return {
     connect,
     disconnect,
     isConnected,
+    isConnecting,
     isSpeaking,
     volumeLevel,
     error,

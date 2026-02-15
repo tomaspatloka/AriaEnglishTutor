@@ -30,6 +30,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
     connect,
     disconnect,
     isConnected: liveIsConnected,
+    isConnecting: liveIsConnecting,
     isSpeaking: liveIsSpeaking,
     volumeLevel,
     error: liveError,
@@ -42,7 +43,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
 
   // 3. Unified State Variables (The "Glue")
   const activeIsSpeaking = isLiveMode ? liveIsSpeaking : legacyIsSpeaking;
-  const activeIsListening = isLiveMode ? liveIsConnected : legacyIsListening;
+  const activeIsListening = isLiveMode ? (liveIsConnected || liveIsConnecting) : legacyIsListening;
   const activeError = isLiveMode ? liveError : legacyError;
 
   const [displayedText, setDisplayedText] = useState("Tap microphone to start conversation");
@@ -51,19 +52,19 @@ const AvatarView: React.FC<AvatarViewProps> = ({
   // 4. Cleanup when switching modes
   useEffect(() => {
     // If we switched TO Legacy, ensure Live is disconnected
-    if (!isLiveMode && liveIsConnected) {
+    if (!isLiveMode && (liveIsConnected || liveIsConnecting)) {
         disconnect();
     }
     // If we switched TO Live, ensure Legacy is stopped (though App.tsx handles some of this)
     if (isLiveMode && legacyIsListening) {
         legacyToggleListening();
     }
-  }, [isLiveMode, liveIsConnected, legacyIsListening]);
+  }, [isLiveMode, liveIsConnected, liveIsConnecting, legacyIsListening, disconnect, legacyToggleListening]);
 
   useEffect(() => {
     if (restartToken === 0) return;
 
-    if (isLiveMode && liveIsConnected) {
+    if (isLiveMode && (liveIsConnected || liveIsConnecting)) {
       disconnect();
       setDisplayedText("Session restarted. Tap microphone to reconnect.");
       setCzechTranslation('');
@@ -75,15 +76,15 @@ const AvatarView: React.FC<AvatarViewProps> = ({
     }
     setDisplayedText("Session restarted.");
     setCzechTranslation('');
-  }, [restartToken, isLiveMode, liveIsConnected, legacyIsListening, disconnect, legacyToggleListening]);
+  }, [restartToken, isLiveMode, liveIsConnected, liveIsConnecting, legacyIsListening, disconnect, legacyToggleListening]);
 
 
   // 5. Unified Toggle Handler
   const handleToggle = () => {
     if (isLiveMode) {
-        if (liveIsConnected) {
+        if (liveIsConnected || liveIsConnecting) {
             disconnect();
-            setDisplayedText("Conversation ended.");
+            setDisplayedText(liveIsConnecting ? "Connection cancelled." : "Conversation ended.");
         } else {
             setDisplayedText("Connecting to Aria...");
             connect();
@@ -115,7 +116,10 @@ const AvatarView: React.FC<AvatarViewProps> = ({
   useEffect(() => {
     if (isLiveMode) {
         // --- Live API Text Logic ---
-        if (liveIsConnected) {
+        if (liveIsConnecting) {
+            setDisplayedText("Connecting to Aria...");
+            setCzechTranslation('');
+        } else if (liveIsConnected) {
             if (liveIsSpeaking) {
                 // Show real-time transcript of what Aria is saying
                 if (settings.showEnglishTranscript && outputTranscript) {
@@ -172,6 +176,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
     }
   }, [
       isLiveMode,
+      liveIsConnecting,
       liveIsConnected,
       liveIsSpeaking,
       legacyIsListening,
@@ -249,10 +254,14 @@ const AvatarView: React.FC<AvatarViewProps> = ({
           {/* Status Indicator */}
           <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-900/90 backdrop-blur-md border border-slate-700 px-5 py-1.5 rounded-full text-[10px] font-black tracking-[0.2em] text-white shadow-xl z-20 whitespace-nowrap uppercase">
              {activeError ? (
-                <span className="text-red-400">Connection Error</span>
+                 <span className="text-red-400">Connection Error</span>
+             ) : isLiveMode && liveIsConnecting ? (
+                <span className="text-amber-300 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></span> Connecting...
+                </span>
              ) : activeIsSpeaking ? (
-               <span className="text-emerald-400 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Aria Speaking
+                <span className="text-emerald-400 flex items-center gap-2">
+                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Aria Speaking
                </span>
              ) : activeIsListening ? (
                <span className="text-red-400 flex items-center gap-2">
@@ -289,12 +298,14 @@ const AvatarView: React.FC<AvatarViewProps> = ({
             <button
                 onClick={handleToggle}
                 className={`w-24 h-24 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.6)] transition-all transform hover:scale-105 active:scale-90 border-[6px] ${
-                activeIsListening
+                isLiveMode && liveIsConnecting
+                    ? 'bg-amber-500 border-amber-400 text-white shadow-amber-500/20 animate-pulse-slow'
+                    : activeIsListening
                     ? 'bg-red-500 border-red-400 text-white shadow-red-500/20 animate-pulse-slow'
                     : 'bg-emerald-500 border-emerald-400 text-white hover:bg-emerald-400 shadow-emerald-500/20'
                 }`}
             >
-                {activeIsListening ? (
+                {(activeIsListening || (isLiveMode && liveIsConnecting)) ? (
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10">
                     <path fillRule="evenodd" d="M4.5 7.5a3 3 0 013-3h9a3 3 0 013 3v9a3 3 0 01-3 3h-9a3 3 0 01-3-3v-9z" clipRule="evenodd" />
                 </svg>
@@ -307,7 +318,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
             </button>
             
             <div className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">
-                {activeIsListening ? "End Call" : `Start ${isLiveMode ? 'Live' : 'Chat'}`}
+                {isLiveMode && liveIsConnecting ? "Cancel" : activeIsListening ? "End Call" : `Start ${isLiveMode ? 'Live' : 'Chat'}`}
             </div>
         </div>
       </div>
