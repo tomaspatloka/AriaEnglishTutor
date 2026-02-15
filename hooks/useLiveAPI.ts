@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
-import { AppSettings } from '../types';
+import { AppSettings, Message } from '../types';
 import { getSystemInstruction, SCENARIOS } from '../constants';
 import { base64ToUint8Array, arrayBufferToBase64, convertFloat32ToInt16, decodeAudioData } from '../utils/audioUtils';
 import { incrementUsage } from '../utils/usageUtils';
@@ -19,6 +19,7 @@ interface UseLiveAPIReturn {
   error: string | null;
   outputTranscript: string; // Real-time transcript of Aria's speech
   inputTranscript: string; // Real-time transcript of user's speech
+  conversationLog: Message[];
 }
 
 export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
@@ -30,6 +31,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
   const [error, setError] = useState<string | null>(null);
   const [outputTranscript, setOutputTranscript] = useState('');
   const [inputTranscript, setInputTranscript] = useState('');
+  const [conversationLog, setConversationLog] = useState<Message[]>([]);
 
   // Refs pro audio komponenty
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -74,6 +76,40 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
     }
 
     return 'Unable to start live conversation. Please retry.';
+  }, []);
+
+  const appendConversationChunk = useCallback((role: Message['role'], chunk: string) => {
+    const cleanChunk = chunk.trim();
+    if (!cleanChunk) return;
+
+    setConversationLog((prev) => {
+      if (prev.length === 0) {
+        return [{
+          id: `live_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          role,
+          text: cleanChunk,
+          timestamp: Date.now(),
+        }];
+      }
+
+      const next = [...prev];
+      const last = next[next.length - 1];
+      if (last.role === role) {
+        next[next.length - 1] = {
+          ...last,
+          text: `${last.text}${cleanChunk.startsWith(' ') ? '' : ' '}${cleanChunk}`.trim(),
+        };
+        return next;
+      }
+
+      next.push({
+        id: `live_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        role,
+        text: cleanChunk,
+        timestamp: Date.now(),
+      });
+      return next;
+    });
   }, []);
 
   // Cleanup funkce pro uvolnění zdrojů
@@ -140,7 +176,8 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
     const connectionId = connectStartedAtRef.current;
     activeConnectionIdRef.current = connectionId;
 
-    cleanup(); // Ujistíme se, že začínáme s čistým štítem
+    cleanup(); // Ujistime se, ze zaciname s cistym stitem
+    setConversationLog([]);
     setError(null);
     setIsConnecting(true);
     isConnectingRef.current = true;
@@ -248,11 +285,13 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
             const outputText = (serverContent as any)?.outputTranscription?.text;
             if (outputText) {
               setOutputTranscript(prev => prev + outputText);
+              appendConversationChunk('model', outputText);
             }
 
             const inputText = (serverContent as any)?.inputTranscription?.text;
             if (inputText) {
               setInputTranscript(prev => prev + inputText);
+              appendConversationChunk('user', inputText);
             }
 
             // Reset transcripts when a new model turn starts
@@ -351,7 +390,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
       setError(mapLiveError(e));
       setIsConnected(false);
     }
-  }, [cleanup, isConnected, mapLiveError, settings]);
+  }, [appendConversationChunk, cleanup, isConnected, mapLiveError, settings]);
 
   useEffect(() => {
     if (!isConnected) {
@@ -384,6 +423,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
     volumeLevel,
     error,
     outputTranscript,
-    inputTranscript
+    inputTranscript,
+    conversationLog
   };
 };

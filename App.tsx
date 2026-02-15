@@ -58,7 +58,9 @@ function App() {
     isSpeaking: false,
     networkSlow: false,
     isUserTalking: false,
+    conversationMessages: [] as Message[],
   });
+  const [progressNotice, setProgressNotice] = useState<string | null>(null);
 
   const sessionStartedAtRef = useRef<number>(Date.now());
   const speakingMsRef = useRef(0);
@@ -164,13 +166,14 @@ function App() {
       speakingMsRef.current += Date.now() - voiceActiveStartedAtRef.current;
       voiceActiveStartedAtRef.current = null;
     }
-  }, [isListening, liveRuntimeState.isConnected]);
+  }, [isListening, liveRuntimeState.isUserTalking, liveRuntimeState.isSpeaking]);
 
   const resetSessionTracking = () => {
     sessionStartedAtRef.current = Date.now();
     speakingMsRef.current = 0;
     voiceActiveStartedAtRef.current = null;
     setLatestSummary(null);
+    setProgressNotice(null);
   };
 
   const getCurrentSpeakingMs = () => {
@@ -200,7 +203,12 @@ function App() {
   };
 
   const finalizeSession = async () => {
-    const sessionMessages = messages.filter(m => m.timestamp >= sessionStartedAtRef.current);
+    const liveSessionMessages = liveRuntimeState.conversationMessages
+      .filter(m => m.timestamp >= sessionStartedAtRef.current && m.text.trim().length > 0);
+    const legacySessionMessages = messages.filter(m => m.timestamp >= sessionStartedAtRef.current);
+    const sessionMessages = settings.interactionMode === 'live-api'
+      ? (liveSessionMessages.length > 0 ? liveSessionMessages : legacySessionMessages)
+      : legacySessionMessages;
     if (sessionMessages.length === 0) return null;
     if (isSummarizing) return null;
     const userMessages = sessionMessages.filter(m => m.role === 'user');
@@ -210,6 +218,7 @@ function App() {
     try {
       const summary = await generateSessionSummary(sessionMessages);
       setLatestSummary(summary);
+      setProgressNotice(null);
 
       const endedAt = Date.now();
       const entry: LessonHistoryEntry = {
@@ -565,7 +574,10 @@ Return to normal English tutor behavior in your next response.`;
 
   const handleGenerateSummaryNow = async () => {
     const summary = await finalizeSession();
-    if (!summary) return;
+    if (!summary) {
+      setProgressNotice('Summary nelze vytvorit: chybi data z konverzace v aktualni session.');
+      return;
+    }
 
     setMessages(prev => [
       ...prev,
@@ -617,6 +629,7 @@ Return to normal English tutor behavior in your next response.`;
         latestSummary={latestSummary}
         history={lessonHistory}
         stats={progressStats}
+        notice={progressNotice}
       />
 
       <ScenarioSelector

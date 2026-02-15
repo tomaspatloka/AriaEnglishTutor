@@ -9,6 +9,7 @@ interface ProgressModalProps {
   latestSummary: SessionSummary | null;
   history: LessonHistoryEntry[];
   stats: ProgressStats;
+  notice: string | null;
 }
 
 const formatMinutes = (ms: number) => `${Math.max(0, Math.round(ms / 60000))} min`;
@@ -28,6 +29,7 @@ const ProgressModal: React.FC<ProgressModalProps> = ({
   latestSummary,
   history,
   stats,
+  notice,
 }) => {
   if (!isOpen) return null;
 
@@ -81,24 +83,30 @@ const ProgressModal: React.FC<ProgressModalProps> = ({
               </button>
             </div>
 
+            {notice && (
+              <p className="mt-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+                {notice}
+              </p>
+            )}
+
             {latestSummary ? (
               <div className="mt-3 space-y-3 text-sm">
                 <div>
                   <p className="font-black text-emerald-700 mb-1">Co bylo dobre</p>
                   <ul className="space-y-1 text-gray-700">
-                    {latestSummary.strengths.map((item, idx) => <li key={`s-${idx}`}>• {item}</li>)}
+                    {latestSummary.strengths.map((item, idx) => <li key={`s-${idx}`}>- {item}</li>)}
                   </ul>
                 </div>
                 <div>
                   <p className="font-black text-rose-700 mb-1">3 nejcastejsi chyby</p>
                   <ul className="space-y-1 text-gray-700">
-                    {latestSummary.commonErrors.map((item, idx) => <li key={`e-${idx}`}>• {item}</li>)}
+                    {latestSummary.commonErrors.map((item, idx) => <li key={`e-${idx}`}>- {item}</li>)}
                   </ul>
                 </div>
                 <div>
                   <p className="font-black text-indigo-700 mb-1">3 vety k treninku</p>
                   <ul className="space-y-1 text-gray-700">
-                    {latestSummary.practiceSentences.map((item, idx) => <li key={`p-${idx}`}>• {item}</li>)}
+                    {latestSummary.practiceSentences.map((item, idx) => <li key={`p-${idx}`}>- {item}</li>)}
                   </ul>
                 </div>
               </div>
@@ -114,10 +122,10 @@ const ProgressModal: React.FC<ProgressModalProps> = ({
                 <div key={item.id} className="rounded-2xl border border-gray-100 p-3 bg-white flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-black text-gray-800">
-                      {new Date(item.endedAt).toLocaleString()} • {item.mode === 'live-api' ? 'Live' : 'Standard'}
+                      {new Date(item.endedAt).toLocaleString()} - {item.mode === 'live-api' ? 'Live' : 'Standard'}
                     </p>
                     <p className="text-[11px] text-gray-500">
-                      Delka: {formatMinutes(item.durationMs)} • Mluveni: {formatMinutes(item.speakingMs)} • Opravy: {item.correctionCount}
+                      Delka: {formatMinutes(item.durationMs)} - Mluveni: {formatMinutes(item.speakingMs)} - Opravy: {item.correctionCount}
                     </p>
                   </div>
                 </div>
@@ -134,4 +142,3 @@ const ProgressModal: React.FC<ProgressModalProps> = ({
 };
 
 export default ProgressModal;
-

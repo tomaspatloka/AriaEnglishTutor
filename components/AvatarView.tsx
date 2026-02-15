@@ -20,6 +20,7 @@ interface AvatarViewProps {
     isSpeaking: boolean;
     networkSlow: boolean;
     isUserTalking: boolean;
+    conversationMessages: Message[];
   }) => void;
 }
 
@@ -46,7 +47,8 @@ const AvatarView: React.FC<AvatarViewProps> = ({
     volumeLevel,
     error: liveError,
     outputTranscript,
-    inputTranscript
+    inputTranscript,
+    conversationLog
   } = useLiveAPI(settings);
 
   // 2. Determine Active Mode
@@ -73,8 +75,9 @@ const AvatarView: React.FC<AvatarViewProps> = ({
       isSpeaking: liveIsSpeaking,
       networkSlow,
       isUserTalking: liveUserTalking,
+      conversationMessages: conversationLog,
     });
-  }, [liveIsConnected, liveIsConnecting, liveIsSpeaking, networkSlow, liveUserTalking, onLiveStateChange]);
+  }, [liveIsConnected, liveIsConnecting, liveIsSpeaking, networkSlow, liveUserTalking, conversationLog, onLiveStateChange]);
 
   const [displayedText, setDisplayedText] = useState("Tap microphone to start conversation");
   const [czechTranslation, setCzechTranslation] = useState('');

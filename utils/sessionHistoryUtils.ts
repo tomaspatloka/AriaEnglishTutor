@@ -69,14 +69,18 @@ export const getProgressStats = (history: LessonHistoryEntry[]): ProgressStats =
 
   const dayStarts = Array.from(new Set(history.map(item => toDayStart(item.endedAt)))).sort((a, b) => b - a);
   let streakDays = 0;
-  for (let i = 0; i < dayStarts.length; i++) {
-    if (i === 0) {
+  const todayStart = toDayStart(Date.now());
+
+  if (dayStarts.length > 0) {
+    const gapFromToday = Math.round((todayStart - dayStarts[0]) / DAY_MS);
+    if (gapFromToday <= 1) {
       streakDays = 1;
-      continue;
+      for (let i = 1; i < dayStarts.length; i++) {
+        const diffDays = Math.round((dayStarts[i - 1] - dayStarts[i]) / DAY_MS);
+        if (diffDays === 1) streakDays += 1;
+        else break;
+      }
     }
-    const diffDays = Math.round((dayStarts[i - 1] - dayStarts[i]) / DAY_MS);
-    if (diffDays === 1) streakDays += 1;
-    else break;
   }
 
   return {
@@ -87,4 +91,3 @@ export const getProgressStats = (history: LessonHistoryEntry[]): ProgressStats =
     correctionTrend,
   };
 };
-
