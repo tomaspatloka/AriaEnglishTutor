@@ -1,0 +1,22 @@
+{
+  "short_name": "Aria",
+  "name": "Aria: AI English Tutor",
+  "icons": [
+    {
+      "src": "/aria-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/aria-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#10b981",
+  "background_color": "#0f172a"
+}
