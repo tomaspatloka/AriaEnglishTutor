@@ -7,6 +7,7 @@ interface InputAreaProps {
   isListening: boolean;
   toggleListening: () => void;
   isLoading: boolean;
+  errorMessage?: string | null;
 }
 
 const InputArea: React.FC<InputAreaProps> = ({
@@ -15,7 +16,8 @@ const InputArea: React.FC<InputAreaProps> = ({
   onSend,
   isListening,
   toggleListening,
-  isLoading
+  isLoading,
+  errorMessage
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -36,6 +38,11 @@ const InputArea: React.FC<InputAreaProps> = ({
 
   return (
     <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-2 sm:p-4 z-50 safe-area-pb">
+      {errorMessage && (
+        <div className="max-w-3xl mx-auto mb-2 px-1 text-[11px] text-red-600 font-semibold">
+          {errorMessage}
+        </div>
+      )}
       <div className="max-w-3xl mx-auto flex items-end gap-2">
         <div className="flex-1 bg-gray-100 rounded-2xl px-4 py-2 focus-within:ring-2 focus-within:ring-primary focus-within:bg-white transition-colors">
           <textarea

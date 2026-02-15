@@ -7,6 +7,7 @@ interface UseSpeechRecognitionReturn {
   stopListening: () => void;
   resetTranscript: () => void;
   hasRecognitionSupport: boolean;
+  error: string | null;
 }
 
 export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
@@ -14,6 +15,25 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
   const [transcript, setTranscript] = useState('');
   const recognitionRef = useRef<any>(null); // Type 'any' used because SpeechRecognition types vary by browser
   const [hasSupport, setHasSupport] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const mapRecognitionError = useCallback((code?: string) => {
+    switch (code) {
+      case 'not-allowed':
+      case 'service-not-allowed':
+        return 'Microphone access denied. Please allow microphone permission and try again.';
+      case 'audio-capture':
+        return 'No microphone was found. Check your input device and try again.';
+      case 'network':
+        return 'Speech recognition network error. Check your internet connection.';
+      case 'no-speech':
+        return 'No speech detected. Try speaking a bit louder and closer to the microphone.';
+      case 'aborted':
+        return null;
+      default:
+        return 'Speech recognition failed. Please try again.';
+    }
+  }, []);
 
   useEffect(() => {
     // Check browser support
@@ -30,6 +50,7 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
 
       recognitionRef.current.onstart = () => {
         setIsListening(true);
+        setError(null);
       };
 
       recognitionRef.current.onend = () => {
@@ -48,23 +69,39 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
         }
         if (finalTranscript) {
           setTranscript(finalTranscript);
+          setError(null);
         }
       };
 
       recognitionRef.current.onerror = (event: any) => {
         console.error("Speech recognition error", event.error);
         setIsListening(false);
+        setError(mapRecognitionError(event?.error));
       };
+    } else {
+      setError('Speech recognition is not supported in this browser. Use Chrome or Edge.');
     }
-  }, []);
+  }, [mapRecognitionError]);
 
   const startListening = useCallback(() => {
-    if (recognitionRef.current && !isListening) {
+    if (!recognitionRef.current) {
+      setError('Speech recognition is unavailable in this browser.');
+      return;
+    }
+
+    if (!isListening) {
       setTranscript('');
+      setError(null);
       try {
         recognitionRef.current.start();
-      } catch (e) {
+      } catch (e: any) {
         console.error("Error starting recognition:", e);
+        const fallbackCode = typeof e?.name === 'string' ? e.name.toLowerCase() : undefined;
+        if (fallbackCode?.includes('notallowed')) {
+          setError('Microphone access denied. Please allow microphone permission and try again.');
+        } else {
+          setError('Could not start microphone recognition. Please retry.');
+        }
       }
     }
   }, [isListening]);
@@ -86,5 +123,6 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
     stopListening,
     resetTranscript,
     hasRecognitionSupport: hasSupport,
+    error,
   };
 };

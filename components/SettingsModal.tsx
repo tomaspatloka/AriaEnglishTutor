@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { AppSettings, EnglishLevel, AvatarType } from '../types';
 import { PRESET_AVATARS, APP_VERSION } from '../constants';
 
@@ -7,18 +7,32 @@ interface SettingsModalProps {
   onClose: () => void;
   currentSettings: AppSettings;
   onSave: (newSettings: AppSettings) => void;
+  onRestartSession: (newSettings: AppSettings) => void;
 }
 
 const levels: EnglishLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentSettings, onSave }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentSettings, onSave, onRestartSession }) => {
   const [settings, setSettings] = useState<AppSettings>(currentSettings);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isBlobUrl = (value: string | null | undefined): value is string =>
+    typeof value === 'string' && value.startsWith('blob:');
+
+  useEffect(() => {
+    if (isOpen) {
+      setSettings(currentSettings);
+    }
+  }, [isOpen, currentSettings]);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
     onSave(settings);
+    onClose();
+  };
+
+  const handleRestartSession = () => {
+    onRestartSession(settings);
     onClose();
   };
 
@@ -31,6 +45,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentS
   };
 
   const handleAvatarSelect = (type: AvatarType) => {
+    if (isBlobUrl(settings.customAvatarImageUrl) && settings.customAvatarImageUrl !== currentSettings.customAvatarImageUrl) {
+      URL.revokeObjectURL(settings.customAvatarImageUrl);
+    }
+
     let gender = settings.voiceGender;
     let newSettings = { ...settings, avatarType: type };
 
@@ -44,9 +62,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentS
     setSettings({ ...newSettings, voiceGender: gender, showAvatarMode: true });
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (isBlobUrl(settings.customAvatarImageUrl) && settings.customAvatarImageUrl !== currentSettings.customAvatarImageUrl) {
+      URL.revokeObjectURL(settings.customAvatarImageUrl);
+    }
+
     const objectUrl = URL.createObjectURL(file);
     setSettings({
       ...settings,
@@ -54,6 +77,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentS
       customAvatarImageUrl: objectUrl,
       showAvatarMode: true
     });
+    e.target.value = '';
   };
 
   const handleForceUpdate = () => {
@@ -254,12 +278,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentS
                 <span className="text-gray-900 text-sm font-black block">App Version / Verze</span>
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{APP_VERSION}</span>
               </div>
-              <button
-                onClick={handleForceUpdate}
-                className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-black text-gray-600 hover:bg-gray-50 transition active:scale-95 shadow-sm"
-              >
-                Force Update
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRestartSession}
+                  className="px-3 py-2 bg-emerald-500 border border-emerald-400 rounded-xl text-[10px] font-black text-white hover:bg-emerald-600 transition active:scale-95 shadow-sm uppercase tracking-wide"
+                >
+                  Restart Session
+                </button>
+                <button
+                  onClick={handleForceUpdate}
+                  className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-black text-gray-600 hover:bg-gray-50 transition active:scale-95 shadow-sm"
+                >
+                  Force Update
+                </button>
+              </div>
             </div>
             <p className="text-[10px] text-gray-400 italic">
               Pokud aplikace nefunguje správně, použijte toto tlačítko k vynucení stažení nejnovějších souborů (Hard Refresh).

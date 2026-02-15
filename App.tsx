@@ -45,6 +45,7 @@ function App() {
   const [showApiInfo, setShowApiInfo] = useState(false);
 
   const [usage, setUsage] = useState(getUsageStats());
+  const [restartToken, setRestartToken] = useState(0);
 
   // PWA Install Prompt
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -91,7 +92,8 @@ function App() {
     transcript,
     startListening,
     stopListening,
-    resetTranscript
+    resetTranscript,
+    error: speechError
   } = useSpeechRecognition();
 
   // Pass settings to TTS hook
@@ -224,10 +226,100 @@ function App() {
     }
   };
 
-  const handleScenarioSelect = (scenario: Scenario | null) => {
-    const newSettings = { ...settings, activeScenario: scenario?.id || null };
+  const restartSessionNow = async (newSettings: AppSettings) => {
+    const scenarioForRestart = newSettings.activeScenario
+      ? SCENARIOS.find(s => s.id === newSettings.activeScenario) || null
+      : null;
+
     setSettings(newSettings);
     saveSettings(newSettings);
+
+    stopSpeaking();
+    resetTranscript();
+    setInputText('');
+    if (isListening) {
+      stopListening();
+    }
+
+    setRestartToken(prev => prev + 1);
+
+    if (showLevelSelector) {
+      return;
+    }
+
+    if (newSettings.interactionMode !== 'legacy') {
+      setMessages([]);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await initializeChat(
+        newSettings.level,
+        newSettings.correctionStrictness,
+        newSettings.showCzechTranslation,
+        scenarioForRestart
+      );
+
+      const greetingText = newSettings.level === 'TEST_ME'
+        ? INITIAL_GREETING_TEST
+        : INITIAL_GREETING_LEVEL(newSettings.level);
+
+      setMessages([{
+        id: generateId(),
+        role: 'model',
+        text: greetingText,
+        timestamp: Date.now()
+      }]);
+    } catch (error) {
+      console.error('Failed to restart session', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleScenarioSelect = async (scenario: Scenario | null) => {
+    const nextScenarioId = scenario?.id || null;
+    if (settings.activeScenario === nextScenarioId) return;
+
+    const newSettings = { ...settings, activeScenario: nextScenarioId };
+    setSettings(newSettings);
+    saveSettings(newSettings);
+
+    if (newSettings.interactionMode !== 'legacy' || showLevelSelector || messages.length === 0) {
+      return;
+    }
+
+    setIsLoading(true);
+    stopSpeaking();
+
+    try {
+      const prompt = scenario
+        ? `[SYSTEM UPDATE]:
+Switch immediately to role-play scenario "${scenario.label}".
+Your role: ${scenario.role}.
+Scenario context: ${scenario.context}
+Stay in character in your next response.`
+        : `[SYSTEM UPDATE]:
+Role-play scenario is now disabled.
+Return to normal English tutor behavior in your next response.`;
+
+      const responseText = await sendMessageToGemini(prompt);
+
+      const aiMessage: Message = {
+        id: generateId(),
+        role: 'model',
+        text: responseText,
+        timestamp: Date.now()
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+      speak(responseText);
+    } catch (error) {
+      console.error('Failed to apply scenario update', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Resolve active scenario object from ID
@@ -314,6 +406,7 @@ function App() {
         onClose={() => setShowSettings(false)}
         currentSettings={settings}
         onSave={handleSettingsSave}
+        onRestartSession={restartSessionNow}
       />
 
       <ScenarioSelector
@@ -426,10 +519,12 @@ function App() {
 
         {settings.showAvatarMode ? (
           <AvatarView
+            restartToken={restartToken}
             latestMessage={messages[messages.length - 1] || null}
             currentInput={inputText}
             isSpeaking={isSpeaking} // Legacy
             isListening={isListening} // Legacy
+            legacyError={speechError}
             toggleListening={toggleListening} // Legacy
             settings={settings}
           />
@@ -472,6 +567,7 @@ function App() {
           isListening={isListening}
           toggleListening={toggleListening}
           isLoading={isLoading}
+          errorMessage={speechError}
         />
       )}
 

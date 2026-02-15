@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Message, AppSettings } from '../types';
 import { PRESET_AVATARS } from '../constants';
 import VirtualAvatar from './VirtualAvatar';
@@ -9,8 +9,10 @@ interface AvatarViewProps {
   currentInput: string; // For Legacy User Input display
   isSpeaking: boolean; // Legacy prop (TTS)
   isListening: boolean; // Legacy prop (STT)
+  legacyError: string | null;
   toggleListening: () => void; // Legacy prop
   settings: AppSettings;
+  restartToken: number;
 }
 
 const AvatarView: React.FC<AvatarViewProps> = ({ 
@@ -18,8 +20,10 @@ const AvatarView: React.FC<AvatarViewProps> = ({
   currentInput,
   isSpeaking: legacyIsSpeaking,
   isListening: legacyIsListening,
+  legacyError,
   toggleListening: legacyToggleListening,
-  settings 
+  settings,
+  restartToken
 }) => {
   // 1. Initialize Live API Hook (always, but only used if mode is 'live-api')
   const {
@@ -39,7 +43,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
   // 3. Unified State Variables (The "Glue")
   const activeIsSpeaking = isLiveMode ? liveIsSpeaking : legacyIsSpeaking;
   const activeIsListening = isLiveMode ? liveIsConnected : legacyIsListening;
-  const activeError = isLiveMode ? liveError : null;
+  const activeError = isLiveMode ? liveError : legacyError;
 
   const [displayedText, setDisplayedText] = useState("Tap microphone to start conversation");
   const [czechTranslation, setCzechTranslation] = useState('');
@@ -55,6 +59,23 @@ const AvatarView: React.FC<AvatarViewProps> = ({
         legacyToggleListening();
     }
   }, [isLiveMode, liveIsConnected, legacyIsListening]);
+
+  useEffect(() => {
+    if (restartToken === 0) return;
+
+    if (isLiveMode && liveIsConnected) {
+      disconnect();
+      setDisplayedText("Session restarted. Tap microphone to reconnect.");
+      setCzechTranslation('');
+      return;
+    }
+
+    if (!isLiveMode && legacyIsListening) {
+      legacyToggleListening();
+    }
+    setDisplayedText("Session restarted.");
+    setCzechTranslation('');
+  }, [restartToken, isLiveMode, liveIsConnected, legacyIsListening, disconnect, legacyToggleListening]);
 
 
   // 5. Unified Toggle Handler

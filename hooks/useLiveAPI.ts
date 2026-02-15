@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
-import { AppSettings, Scenario } from '../types';
+import { AppSettings } from '../types';
 import { getSystemInstruction, SCENARIOS } from '../constants';
 import { base64ToUint8Array, arrayBufferToBase64, convertFloat32ToInt16, decodeAudioData } from '../utils/audioUtils';
 import { incrementUsage } from '../utils/usageUtils';
@@ -29,6 +29,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
 
   // Refs pro audio komponenty
   const audioContextRef = useRef<AudioContext | null>(null);
+  const inputAudioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const inputSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
@@ -41,10 +42,36 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
   const nextStartTimeRef = useRef<number>(0);
   const audioSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
 
+  const mapLiveError = useCallback((e: any): string => {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      return 'No internet connection. Reconnect and try again.';
+    }
+
+    const raw = `${e?.message || e?.error?.message || e?.status || e?.toString?.() || ''}`.toLowerCase();
+
+    if (raw.includes('notallowed') || raw.includes('permission') || raw.includes('denied')) {
+      return 'Microphone access denied. Please allow microphone permission.';
+    }
+    if (raw.includes('notfound') || raw.includes('audio-capture') || raw.includes('no device')) {
+      return 'No microphone device found. Check your audio input and retry.';
+    }
+    if (
+      raw.includes('network') ||
+      raw.includes('failed to fetch') ||
+      raw.includes('connection') ||
+      raw.includes('timeout')
+    ) {
+      return 'Live connection failed. Check your internet and try again.';
+    }
+
+    return 'Unable to start live conversation. Please retry.';
+  }, []);
+
   // Cleanup funkce pro uvolnění zdrojů
   const cleanup = useCallback(() => {
     // 1. Zastavit nahrávání
     if (processorRef.current) {
+      processorRef.current.onaudioprocess = null;
       processorRef.current.disconnect();
       processorRef.current = null;
     }
@@ -67,6 +94,10 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
       audioContextRef.current.close();
       audioContextRef.current = null;
+    }
+    if (inputAudioContextRef.current && inputAudioContextRef.current.state !== 'closed') {
+      inputAudioContextRef.current.close();
+      inputAudioContextRef.current = null;
     }
 
     // 4. Uzavřít Session
@@ -141,6 +172,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
             // --- Nastavení Audio Input Pipeline ---
             // Musíme vytvořit separátní kontext pro vstup, abychom vynutili 16kHz
             const inputCtx = new AudioContext({ sampleRate: 16000 });
+            inputAudioContextRef.current = inputCtx;
             const source = inputCtx.createMediaStreamSource(stream);
             inputSourceRef.current = source;
 
@@ -258,7 +290,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
           },
           onerror: (e) => {
             console.error("Gemini Live Error", e);
-            setError("Connection Error");
+            setError(mapLiveError(e));
             cleanup();
           }
         }
@@ -268,10 +300,10 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
 
     } catch (e: any) {
       console.error(e);
-      setError(e.message || "Failed to start live session");
+      setError(mapLiveError(e));
       setIsConnected(false);
     }
-  }, [cleanup, settings]);
+  }, [cleanup, mapLiveError, settings]);
 
   const disconnect = useCallback(() => {
     cleanup();
