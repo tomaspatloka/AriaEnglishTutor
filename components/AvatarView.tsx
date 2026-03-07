@@ -132,7 +132,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
   // Helper: Extract English text, Czech translation and correction from raw transcript
   const parseTranscript = (raw: string): { english: string; czech: string; correction: string } => {
     // Extract correction part if present ("💡 Correction" or plain "Correction:")
-    const correctionMatch = raw.match(/(?:💡\s*)?Correction\s*:/i);
+    const correctionMatch = raw.match(/(?:💡\s*)?Correction[^:]*:/i);
     const correction = correctionMatch && typeof correctionMatch.index === 'number'
       ? raw.substring(correctionMatch.index + correctionMatch[0].length).trim()
       : '';
