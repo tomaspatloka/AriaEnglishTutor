@@ -50,7 +50,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onRetryCorrected
         )}
 
         {correction && (
-          <div className="mt-2 pt-2 border-t border-emerald-200/50 text-emerald-800 text-xs sm:text-sm bg-emerald-50 p-2 rounded space-y-2">
+          <div className="mt-2 pt-2 border-t border-amber-200/50 text-amber-800 text-xs sm:text-sm bg-amber-50 p-2 rounded space-y-2">
             <span className="font-bold flex items-center gap-1">Correction:</span>
             <span className="whitespace-pre-wrap">{correction}</span>
             <div className="flex flex-wrap gap-2 pt-1">
@@ -59,7 +59,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onRetryCorrected
                   e.stopPropagation();
                   onRetryCorrected?.(message);
                 }}
-                className="px-2.5 py-1 rounded-lg bg-white border border-emerald-300 text-emerald-700 font-semibold text-[11px] hover:bg-emerald-100 transition"
+                className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-700 font-semibold text-[11px] hover:bg-amber-100 transition"
               >
                 Zopakovat spravne
               </button>
@@ -68,7 +68,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onRetryCorrected
                   e.stopPropagation();
                   onPracticeVariants?.(message);
                 }}
-                className="px-2.5 py-1 rounded-lg bg-white border border-emerald-300 text-emerald-700 font-semibold text-[11px] hover:bg-emerald-100 transition"
+                className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-700 font-semibold text-[11px] hover:bg-amber-100 transition"
               >
                 Procvicit 3 varianty
               </button>
