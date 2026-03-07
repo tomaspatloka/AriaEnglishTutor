@@ -1,5 +1,15 @@
-export const APP_VERSION = "v1.2.1";
+export const APP_VERSION = "v1.2.2";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.2.2",
+    date: "2026-03-07",
+    title: "Correction oddělena od přepisu v Avatar modu",
+    changes: [
+      "Korekce (Correction) se nyní zobrazuje samostatně pod hlavním přepisem v jantarové barvě.",
+      "Přepis a korekce jsou vizuálně jasně odlišeny — přepis bílý, korekce žlutá s nadpisem 💡 CORRECTION.",
+      "Platí pro Legacy i Live API mód.",
+    ],
+  },
   {
     version: "v1.2.1",
     date: "2026-03-07",
