@@ -5,20 +5,6 @@ export interface Message {
   timestamp: number;
 }
 
-export interface ChatState {
-  messages: Message[];
-  isLoading: boolean;
-  isRecording: boolean;
-  isSpeaking: boolean;
-}
-
-export enum SpeechState {
-  IDLE = 'IDLE',
-  LISTENING = 'LISTENING',
-  PROCESSING = 'PROCESSING',
-  SPEAKING = 'SPEAKING'
-}
-
 export type EnglishLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'TEST_ME';
 
 export type VoiceAccent = 'US' | 'UK';

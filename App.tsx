@@ -66,6 +66,7 @@ function App() {
   const speakingMsRef = useRef(0);
   const voiceActiveStartedAtRef = useRef<number | null>(null);
   const prevLiveConnectedRef = useRef(false);
+  const isSummarizingRef = useRef(false);
 
   // PWA Install Prompt
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -115,7 +116,7 @@ function App() {
     stopListening,
     resetTranscript,
     error: speechError
-  } = useSpeechRecognition();
+  } = useSpeechRecognition(settings.voiceAccent);
 
   // Pass settings to TTS hook
   const { speak, stop: stopSpeaking, isSpeaking, speakManual } = useTextToSpeech(settings);
@@ -185,7 +186,7 @@ function App() {
 
   const getCorrectionCount = (items: Message[]) => items.reduce((acc, m) => {
     if (m.role !== 'model') return acc;
-    return acc + (/(Correction)/i.test(m.text) ? 1 : 0);
+    return acc + (/(?:💡\s*Correction|^Correction\s*[:(])/mi.test(m.text) ? 1 : 0);
   }, 0);
 
   const summaryToMessage = (summary: SessionSummary) => {
@@ -210,10 +211,11 @@ function App() {
       ? (liveSessionMessages.length > 0 ? liveSessionMessages : legacySessionMessages)
       : legacySessionMessages;
     if (sessionMessages.length === 0) return null;
-    if (isSummarizing) return null;
+    if (isSummarizingRef.current) return null;
     const userMessages = sessionMessages.filter(m => m.role === 'user');
     if (userMessages.length === 0) return null;
 
+    isSummarizingRef.current = true;
     setIsSummarizing(true);
     try {
       const summary = await generateSessionSummary(sessionMessages);
@@ -238,6 +240,7 @@ function App() {
       console.error('Failed to generate session summary', error);
       return null;
     } finally {
+      isSummarizingRef.current = false;
       setIsSummarizing(false);
     }
   };
@@ -602,8 +605,8 @@ Return to normal English tutor behavior in your next response.`;
     if (settings.avatarType === 'preset-male') {
       return PRESET_AVATARS.male.imageUrl;
     }
-    // Default Virtual Avatar Fallback (Picsum or internal asset)
-    return "https://picsum.photos/id/64/200/200";
+    // Default Virtual Avatar Fallback (inline SVG — no external dependency)
+    return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='38' r='24' fill='%23475569'/%3E%3Cellipse cx='50' cy='88' rx='34' ry='22' fill='%23475569'/%3E%3C/svg%3E";
   };
 
   return (
@@ -700,7 +703,9 @@ Return to normal English tutor behavior in your next response.`;
             className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all active:scale-95"
             title="Progress"
           >
-            <span className="text-lg leading-none">PR</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                <path d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z" />
+              </svg>
           </button>
 
           <button

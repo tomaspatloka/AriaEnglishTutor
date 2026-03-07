@@ -330,7 +330,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
         {/* Status Text (Scrollable/Multiline if needed) */}
         <div className="w-full max-w-xl flex flex-col items-center justify-end text-center gap-1.5 min-h-[60px] max-h-[280px] overflow-y-auto no-scrollbar">
              {/* English Transcript */}
-             <p className={`text-lg sm:text-xl font-bold leading-tight drop-shadow-lg transition-all duration-300 line-clamp-7 ${activeIsListening ? 'text-white' : 'text-slate-400'}`}>
+             <p className={`text-lg sm:text-xl font-bold leading-tight drop-shadow-lg transition-all duration-300 ${activeIsListening ? 'text-white' : 'text-slate-400'}`}>
                {displayedText}
              </p>
              {/* Correction — amber/yellow, clearly distinct from main transcript */}
@@ -358,17 +358,17 @@ const AvatarView: React.FC<AvatarViewProps> = ({
                 )}
                 {showAriaListening && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-black tracking-wide bg-red-500/20 text-red-300 border border-red-400/30">
-                    Aria posloucha
+                    Aria poslouchá
                   </span>
                 )}
                 {showAriaThinking && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-black tracking-wide bg-sky-500/20 text-sky-300 border border-sky-400/30">
-                    Aria premysli
+                    Aria přemýšlí
                   </span>
                 )}
                 {networkSlow && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-black tracking-wide bg-amber-500/20 text-amber-300 border border-amber-400/30">
-                    Sit pomala
+                    Síť pomalá
                   </span>
                 )}
               </div>

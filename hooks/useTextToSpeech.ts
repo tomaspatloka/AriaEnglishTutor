@@ -55,39 +55,32 @@ export const useTextToSpeech = (settings: AppSettings) => {
 
   }, [availableVoices, settings.voiceAccent, settings.voiceGender]);
 
-  const speak = useCallback((text: string) => {
-    if (!supported) return;
-
-    // Cancel existing speech
-    window.speechSynthesis.cancel();
-
-    if (!settings.autoPlayAudio) return; // Respect auto-play setting
-
-    // Clean text: Only read the English part
-    // Stop at 💡 Correction OR 🇨🇿 Translation
+  // Shared utterance builder — single source of truth for TTS playback
+  const buildAndSpeak = useCallback((text: string) => {
     const textToSpeak = text.split(/💡|🇨🇿/)[0].trim();
-
     if (!textToSpeak) return;
 
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    
     if (selectedVoiceRef.current) {
       utterance.voice = selectedVoiceRef.current;
       utterance.lang = selectedVoiceRef.current.lang;
     } else {
-       // Fallback defaults
-       utterance.lang = settings.voiceAccent === 'US' ? 'en-US' : 'en-GB';
+      utterance.lang = settings.voiceAccent === 'US' ? 'en-US' : 'en-GB';
     }
-
-    utterance.rate = 0.95; 
-    utterance.pitch = settings.voiceGender === 'FEMALE' ? 1.1 : 0.9; 
-
+    utterance.rate = 0.95;
+    utterance.pitch = settings.voiceGender === 'FEMALE' ? 1.1 : 0.9;
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
-
     window.speechSynthesis.speak(utterance);
-  }, [supported, settings.autoPlayAudio, settings.voiceAccent, settings.voiceGender]);
+  }, [settings.voiceAccent, settings.voiceGender]);
+
+  const speak = useCallback((text: string) => {
+    if (!supported) return;
+    window.speechSynthesis.cancel();
+    if (!settings.autoPlayAudio) return;
+    buildAndSpeak(text);
+  }, [supported, settings.autoPlayAudio, buildAndSpeak]);
 
   const stop = useCallback(() => {
     if (supported) {
@@ -97,28 +90,11 @@ export const useTextToSpeech = (settings: AppSettings) => {
   }, [supported]);
 
   const speakManual = useCallback((text: string) => {
-      // Force speak even if autoplay is off
-      const tempSettings = { ...settings, autoPlayAudio: true };
-      // Reuse logic but bypass the check
-      if (!supported) return;
-      window.speechSynthesis.cancel();
-      // Clean text: stop at 💡 OR 🇨🇿
-      const textToSpeak = text.split(/💡|🇨🇿/)[0].trim();
-      if (!textToSpeak) return;
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      if (selectedVoiceRef.current) {
-        utterance.voice = selectedVoiceRef.current;
-        utterance.lang = selectedVoiceRef.current.lang;
-      } else {
-         utterance.lang = settings.voiceAccent === 'US' ? 'en-US' : 'en-GB';
-      }
-      utterance.rate = 0.95; 
-      utterance.pitch = settings.voiceGender === 'FEMALE' ? 1.1 : 0.9; 
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utterance);
-  }, [supported, settings]);
+    // Force speak even if autoplay is off
+    if (!supported) return;
+    window.speechSynthesis.cancel();
+    buildAndSpeak(text);
+  }, [supported, buildAndSpeak]);
 
   return { speak, stop, isSpeaking, supported, speakManual };
 };

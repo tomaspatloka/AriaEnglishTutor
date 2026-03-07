@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { VoiceAccent } from '../types';
 
 interface UseSpeechRecognitionReturn {
   isListening: boolean;
@@ -10,7 +11,7 @@ interface UseSpeechRecognitionReturn {
   error: string | null;
 }
 
-export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
+export const useSpeechRecognition = (voiceAccent: VoiceAccent = 'US'): UseSpeechRecognitionReturn => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const recognitionRef = useRef<any>(null); // Type 'any' used because SpeechRecognition types vary by browser
@@ -46,7 +47,7 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false; // Stop after one sentence/phrase for chat style
       recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'en-US'; // Target language is English
+      recognitionRef.current.lang = voiceAccent === 'UK' ? 'en-GB' : 'en-US';
 
       recognitionRef.current.onstart = () => {
         setIsListening(true);
@@ -81,7 +82,7 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
     } else {
       setError('Speech recognition is not supported in this browser. Use Chrome or Edge.');
     }
-  }, [mapRecognitionError]);
+  }, [mapRecognitionError, voiceAccent]);
 
   const startListening = useCallback(() => {
     if (!recognitionRef.current) {

@@ -1,5 +1,21 @@
-export const APP_VERSION = "v1.2.3";
+export const APP_VERSION = "v1.3.0";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.3.0",
+    date: "2026-03-07",
+    title: "Audit opravy: UX, bugy, code quality",
+    changes: [
+      "Opravena diakritika ve stavových hlášeních ('Síť pomalá', 'Aria poslouchá', 'Aria přemýšlí').",
+      "Progress tlačítko má nyní přehlednou ikonu grafu místo textu 'PR'.",
+      "Odstraněn line-clamp v Avatar módu — dlouhý text je nyní plně scrollovatelný.",
+      "STT rozpoznávání respektuje nastavení akcentu (en-US vs en-GB).",
+      "Opraven dead code a DRY porušení v TTS hooku.",
+      "Opraven race condition při generování session summary.",
+      "Zpřesněna detekce korekcí pro přesnější statistiky.",
+      "Uvolnění audio zdrojů při odmountování komponenty (memory leak fix).",
+      "Odstraněna závislost na externím picsum.photos pro fallback avatar.",
+    ],
+  },
   {
     version: "v1.2.3",
     date: "2026-03-07",

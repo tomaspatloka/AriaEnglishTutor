@@ -392,6 +392,14 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
     }
   }, [appendConversationChunk, cleanup, isConnected, mapLiveError, settings]);
 
+  // Cleanup on unmount — release MediaStream and AudioContext if component disappears
+  useEffect(() => {
+    return () => {
+      cleanup();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (!isConnected) {
       setNetworkSlow(false);
