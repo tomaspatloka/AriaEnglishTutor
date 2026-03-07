@@ -160,12 +160,14 @@ const AvatarView: React.FC<AvatarViewProps> = ({
         if (liveIsConnecting) {
             setDisplayedText("Connecting to Aria...");
             setCzechTranslation('');
+            setCorrectionText(''); // clear on fresh connect
         } else if (liveIsConnected) {
             if (liveIsSpeaking) {
                 // Show real-time transcript of what Aria is saying
                 if (settings.showEnglishTranscript && outputTranscript) {
                     const { english, czech, correction } = parseTranscript(outputTranscript);
                     setDisplayedText(english || "Aria is speaking...");
+                    // Update correction only when found; clear it when Aria's new turn has no correction yet
                     setCorrectionText(correction);
                     if (settings.showCzechTranslation) {
                         setCzechTranslation(czech);
@@ -178,18 +180,19 @@ const AvatarView: React.FC<AvatarViewProps> = ({
                     setCorrectionText('');
                 }
             } else {
-                // Show real-time transcript of what user is saying
+                // User is talking — keep correctionText visible so user can read it!
                 if (inputTranscript) {
                     setDisplayedText(inputTranscript);
                 } else {
                     setDisplayedText("Listening...");
                 }
                 setCzechTranslation('');
-                setCorrectionText('');
+                // NOTE: intentionally NOT clearing correctionText here
             }
         } else if (!liveError) {
              setDisplayedText("Tap microphone to start conversation (Live)");
              setCzechTranslation('');
+             setCorrectionText(''); // clear when disconnected
         }
     } else {
         // --- Legacy Mode Text Logic ---
@@ -325,16 +328,16 @@ const AvatarView: React.FC<AvatarViewProps> = ({
       <div className="flex-shrink-0 z-20 flex flex-col items-center gap-4 pb-8 px-6 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/95 to-transparent pt-12">
         
         {/* Status Text (Scrollable/Multiline if needed) */}
-        <div className="w-full max-w-xl flex flex-col items-center justify-end text-center gap-1.5 min-h-[60px] max-h-[180px] overflow-y-auto no-scrollbar">
+        <div className="w-full max-w-xl flex flex-col items-center justify-end text-center gap-1.5 min-h-[60px] max-h-[280px] overflow-y-auto no-scrollbar">
              {/* English Transcript */}
-             <p className={`text-lg sm:text-xl font-bold leading-tight drop-shadow-lg transition-all duration-300 line-clamp-4 ${activeIsListening ? 'text-white' : 'text-slate-400'}`}>
+             <p className={`text-lg sm:text-xl font-bold leading-tight drop-shadow-lg transition-all duration-300 line-clamp-7 ${activeIsListening ? 'text-white' : 'text-slate-400'}`}>
                {displayedText}
              </p>
              {/* Correction — amber/yellow, clearly distinct from main transcript */}
              {correctionText && (
                <div className="w-full mt-1 pt-1.5 border-t border-amber-400/30">
                  <p className="text-xs font-black uppercase tracking-widest text-amber-400 mb-0.5">💡 Correction</p>
-                 <p className="text-sm sm:text-base font-semibold leading-snug text-amber-300 drop-shadow-md line-clamp-4 whitespace-pre-wrap">
+                 <p className="text-sm sm:text-base font-semibold leading-snug text-amber-300 drop-shadow-md whitespace-pre-wrap">
                    {correctionText}
                  </p>
                </div>

@@ -1,5 +1,15 @@
-export const APP_VERSION = "v1.2.2";
+export const APP_VERSION = "v1.2.3";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.2.3",
+    date: "2026-03-07",
+    title: "Oprava zobrazení korekce v Live módu",
+    changes: [
+      "Korekce (Correction) nyní zůstává viditelná i po dokončení Ariičiny repliky — uživatel má čas ji přečíst.",
+      "Přepis rozdělen na 7 řádků (dříve 4) pro zobrazování delších vět.",
+      "Opravena regex pro detekci formátu 'Correction (in Czech):'.",
+    ],
+  },
   {
     version: "v1.2.2",
     date: "2026-03-07",
