@@ -81,6 +81,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
 
   const [displayedText, setDisplayedText] = useState("Tap microphone to start conversation");
   const [czechTranslation, setCzechTranslation] = useState('');
+  const [correctionText, setCorrectionText] = useState('');
   
   // 4. Cleanup when switching modes
   useEffect(() => {
@@ -128,10 +129,13 @@ const AvatarView: React.FC<AvatarViewProps> = ({
     }
   };
 
-  // Helper: Extract English text and Czech translation from raw transcript
-  const parseTranscript = (raw: string): { english: string; czech: string } => {
-    // Remove correction part if present ("💡 Correction" or plain "Correction:")
+  // Helper: Extract English text, Czech translation and correction from raw transcript
+  const parseTranscript = (raw: string): { english: string; czech: string; correction: string } => {
+    // Extract correction part if present ("💡 Correction" or plain "Correction:")
     const correctionMatch = raw.match(/(?:💡\s*)?Correction\s*:/i);
+    const correction = correctionMatch && typeof correctionMatch.index === 'number'
+      ? raw.substring(correctionMatch.index + correctionMatch[0].length).trim()
+      : '';
     const withoutCorrections = correctionMatch && typeof correctionMatch.index === 'number'
       ? raw.substring(0, correctionMatch.index)
       : raw;
@@ -143,10 +147,10 @@ const AvatarView: React.FC<AvatarViewProps> = ({
       const czech = withoutCorrections
         .substring(translationMatch.index + translationMatch[0].length)
         .trim();
-      return { english, czech };
+      return { english, czech, correction };
     }
 
-    return { english: withoutCorrections.trim(), czech: '' };
+    return { english: withoutCorrections.trim(), czech: '', correction };
   };
 
   // 6. Update Display Text Logic
@@ -160,8 +164,9 @@ const AvatarView: React.FC<AvatarViewProps> = ({
             if (liveIsSpeaking) {
                 // Show real-time transcript of what Aria is saying
                 if (settings.showEnglishTranscript && outputTranscript) {
-                    const { english, czech } = parseTranscript(outputTranscript);
+                    const { english, czech, correction } = parseTranscript(outputTranscript);
                     setDisplayedText(english || "Aria is speaking...");
+                    setCorrectionText(correction);
                     if (settings.showCzechTranslation) {
                         setCzechTranslation(czech);
                     } else {
@@ -170,6 +175,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
                 } else {
                     setDisplayedText("Aria is speaking...");
                     setCzechTranslation('');
+                    setCorrectionText('');
                 }
             } else {
                 // Show real-time transcript of what user is saying
@@ -179,6 +185,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
                     setDisplayedText("Listening...");
                 }
                 setCzechTranslation('');
+                setCorrectionText('');
             }
         } else if (!liveError) {
              setDisplayedText("Tap microphone to start conversation (Live)");
@@ -195,8 +202,9 @@ const AvatarView: React.FC<AvatarViewProps> = ({
              setCzechTranslation('');
         } else if (legacyIsSpeaking) {
              if (latestMessage?.role === 'model') {
-                 const { english, czech } = parseTranscript(latestMessage.text);
+                 const { english, czech, correction } = parseTranscript(latestMessage.text);
                  setDisplayedText(english);
+                 setCorrectionText(correction);
                  if (settings.showCzechTranslation) {
                      setCzechTranslation(czech);
                  } else {
@@ -205,6 +213,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
              } else {
                  setDisplayedText("Speaking...");
                  setCzechTranslation('');
+                 setCorrectionText('');
              }
         } else {
              setDisplayedText("Tap microphone to start conversation (Standard)");
@@ -321,9 +330,18 @@ const AvatarView: React.FC<AvatarViewProps> = ({
              <p className={`text-lg sm:text-xl font-bold leading-tight drop-shadow-lg transition-all duration-300 line-clamp-4 ${activeIsListening ? 'text-white' : 'text-slate-400'}`}>
                {displayedText}
              </p>
+             {/* Correction — amber/yellow, clearly distinct from main transcript */}
+             {correctionText && (
+               <div className="w-full mt-1 pt-1.5 border-t border-amber-400/30">
+                 <p className="text-xs font-black uppercase tracking-widest text-amber-400 mb-0.5">💡 Correction</p>
+                 <p className="text-sm sm:text-base font-semibold leading-snug text-amber-300 drop-shadow-md line-clamp-4 whitespace-pre-wrap">
+                   {correctionText}
+                 </p>
+               </div>
+             )}
              {/* Czech Translation — smaller, distinct color, separated */}
              {czechTranslation && (
-               <p className="text-sm sm:text-base font-medium leading-snug text-amber-300/90 drop-shadow-md line-clamp-3 border-t border-white/10 pt-1.5 mt-0.5 w-full italic">
+               <p className="text-sm sm:text-base font-medium leading-snug text-emerald-300/90 drop-shadow-md line-clamp-3 border-t border-white/10 pt-1.5 mt-0.5 w-full italic">
                  {czechTranslation}
                </p>
              )}
