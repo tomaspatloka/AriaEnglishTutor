@@ -1,5 +1,13 @@
-export const APP_VERSION = "v1.2.0";
+export const APP_VERSION = "v1.2.1";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.2.1",
+    date: "2026-03-07",
+    title: "UI polish – korekční bublina",
+    changes: [
+      "Correction box přebarven ze zelené (emerald) na jantarovou (amber) pro lepší vizuální odlišení.",
+    ],
+  },
   {
     version: "v1.2.0",
     date: "2026-02-15",
