@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aria English Tutor — Stavová zpráva v1.3.0</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --primary: #60a5fa;
+    --primary-dim: #1e3a5f;
+    --primary-glow: rgba(96,165,250,0.15);
+    --success: #4ade80;
+    --success-dim: rgba(74,222,128,0.12);
+    --warning: #fbbf24;
+    --warning-dim: rgba(251,191,36,0.12);
+    --error: #f87171;
+    --error-dim: rgba(248,113,113,0.12);
+    --purple: #c084fc;
+    --purple-dim: rgba(192,132,252,0.12);
+    --surface: #1a1d2e;
+    --surface-raised: #1f2235;
+    --surface-variant: #252940;
+    --surface-high: #2d3154;
+    --bg: #0d0f1a;
+    --on-surface: #e2e8f0;
+    --on-surface-dim: #94a3b8;
+    --outline: #2a2f4a;
+    --radius: 14px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.5);
+    --glow: 0 0 0 1px rgba(96,165,250,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--on-surface); line-height: 1.6; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+
+  /* Header */
+  .report-header {
+    background: linear-gradient(135deg, #1e3a6e 0%, #0d1f3c 60%, #13102e 100%);
+    border: 1px solid var(--primary-dim);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .report-header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(96,165,250,0.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .report-header h1 { font-size: 1.85rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.02em; }
+  .report-header .meta { opacity: 0.65; font-size: 0.88rem; }
+  .badge-version {
+    display: inline-block;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-left: 10px;
+    box-shadow: 0 0 12px rgba(96,165,250,0.4);
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--outline);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 18px;
+    color: var(--primary);
+    border-bottom: 1px solid var(--outline);
+    padding-bottom: 10px;
+    letter-spacing: 0.01em;
+  }
+  .card h3 { font-size: 0.95rem; font-weight: 600; margin: 16px 0 8px; color: var(--on-surface); }
+
+  /* Stat grid */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .stat-box {
+    background: var(--surface-variant);
+    border: 1px solid var(--outline);
+    border-radius: 12px;
+    padding: 18px 14px;
+    text-align: center;
+    transition: border-color 0.2s;
+  }
+  .stat-box:hover { border-color: var(--primary); }
+  .stat-box .value { font-size: 1.9rem; font-weight: 800; color: var(--primary); }
+  .stat-box .label { font-size: 0.75rem; color: var(--on-surface-dim); margin-top: 5px; }
+  .stat-box.green .value { color: var(--success); }
+  .stat-box.amber .value { color: var(--warning); }
+  .stat-box.red .value { color: var(--error); }
+
+  /* RAG badges */
+  .rag { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 0.76rem; font-weight: 600; }
+  .rag.green { background: var(--success-dim); color: var(--success); border: 1px solid rgba(74,222,128,0.25); }
+  .rag.amber { background: var(--warning-dim); color: var(--warning); border: 1px solid rgba(251,191,36,0.25); }
+  .rag.red { background: var(--error-dim); color: var(--error); border: 1px solid rgba(248,113,113,0.25); }
+  .rag::before { content: '●'; font-size: 0.55rem; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  thead { background: var(--surface-high); }
+  th { padding: 11px 13px; text-align: left; font-weight: 600; color: var(--primary); font-size: 0.82rem; letter-spacing: 0.04em; text-transform: uppercase; }
+  td { padding: 10px 13px; border-bottom: 1px solid var(--outline); vertical-align: middle; color: var(--on-surface); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--primary-glow); }
+  .check { color: var(--success); font-size: 1rem; }
+  .cross { color: var(--error); font-size: 1rem; }
+  .partial { color: var(--warning); font-size: 1rem; }
+  .small { font-size: 0.77rem; color: var(--on-surface-dim); }
+
+  /* Priority badges */
+  .p0 { background: var(--error-dim); color: var(--error); border: 1px solid rgba(248,113,113,0.3); padding: 2px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 700; }
+  .p1 { background: var(--warning-dim); color: var(--warning); border: 1px solid rgba(251,191,36,0.3); padding: 2px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 700; }
+  .p2 { background: var(--primary-glow); color: var(--primary); border: 1px solid rgba(96,165,250,0.3); padding: 2px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 700; }
+  .p3 { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(192,132,252,0.3); padding: 2px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 700; }
+
+  /* Charts */
+  .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .chart-box {
+    background: var(--surface-variant);
+    border: 1px solid var(--outline);
+    border-radius: 12px;
+    padding: 18px;
+  }
+  .chart-box h4 { font-size: 0.82rem; color: var(--on-surface-dim); margin-bottom: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 26px; }
+  .timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, var(--primary-dim), transparent); }
+  .timeline-item { position: relative; margin-bottom: 20px; }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -22px; top: 6px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--surface-variant);
+    border: 2px solid var(--primary);
+    box-shadow: 0 0 8px rgba(96,165,250,0.4);
+  }
+  .timeline-item.done::before {
+    background: var(--success);
+    border-color: var(--success);
+    box-shadow: 0 0 8px rgba(74,222,128,0.5);
+  }
+  .timeline-ver { font-weight: 700; color: var(--primary); font-size: 0.9rem; }
+  .timeline-desc { font-size: 0.85rem; color: var(--on-surface-dim); margin-top: 3px; }
+
+  /* Feature tags */
+  .feature-tag {
+    display: inline-block;
+    background: var(--primary-glow);
+    color: var(--primary);
+    border: 1px solid rgba(96,165,250,0.25);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    margin: 2px;
+  }
+  .feature-tag.new {
+    background: var(--success-dim);
+    color: var(--success);
+    border-color: rgba(74,222,128,0.25);
+  }
+
+  /* Highlight box */
+  .highlight {
+    background: linear-gradient(135deg, var(--primary-glow), rgba(96,165,250,0.05));
+    border-left: 3px solid var(--primary);
+    padding: 12px 16px;
+    border-radius: 0 10px 10px 0;
+    margin: 10px 0;
+    font-size: 0.9rem;
+    color: var(--on-surface);
+  }
+
+  /* Code */
+  code {
+    background: var(--surface-high);
+    border: 1px solid var(--outline);
+    color: var(--primary);
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 0.83em;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+  }
+
+  /* Lists */
+  .body-list { padding-left: 18px; font-size: 0.9rem; color: var(--on-surface); }
+  .body-list li { margin-bottom: 5px; }
+
+  /* Two-col */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* Highlight row */
+  .highlight-row td { background: linear-gradient(90deg, rgba(96,165,250,0.08), transparent) !important; border-left: 3px solid var(--primary); }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .stat-box .value { font-size: 1.5rem; }
+    .report-header h1 { font-size: 1.3rem; }
+    th, td { padding: 8px 9px; font-size: 0.81rem; }
+    .chart-grid { grid-template-columns: 1fr; }
+    .report-header { padding: 24px 18px; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--surface-high); border-radius: 3px; }
+
+  /* Print */
+  @media print {
+    body { background: #fff; color: #000; }
+    .card { box-shadow: none; border: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="report-header">
+    <h1>Aria English Tutor — Stavová zpráva <span class="badge-version">v1.3.0</span></h1>
+    <div class="meta">Datum: 2026-03-15 &nbsp;·&nbsp; Auditor: PAI &nbsp;·&nbsp; Stack: React 19 · TypeScript · Vite 6 · Gemini AI</div>
+  </div>
+
+  <!-- EXECUTIVE SUMMARY -->
+  <div class="card">
+    <h2>Executive Summary</h2>
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="value">1.3.0</div>
+        <div class="label">Aktualni verze</div>
+      </div>
+      <div class="stat-box green">
+        <div class="value">8</div>
+        <div class="label">React komponent</div>
+      </div>
+      <div class="stat-box">
+        <div class="value">844</div>
+        <div class="label">Radku v App.tsx</div>
+      </div>
+      <div class="stat-box green">
+        <div class="value">14</div>
+        <div class="label">Role-play scenaru</div>
+      </div>
+      <div class="stat-box amber">
+        <div class="value">0</div>
+        <div class="label">Testu</div>
+      </div>
+      <div class="stat-box green">
+        <div class="value">7</div>
+        <div class="label">Releasu</div>
+      </div>
+    </div>
+
+    <div class="highlight">
+      AI-powered aplikace pro vyuku anglictiny s Gemini. Podporuje real-time konverzaci (Live API), 14 role-play scenaru,
+      session progress tracking, CEFR level assessment a nastavitelnou uroven korekci (1-10).
+    </div>
+
+    <div class="two-col" style="margin-top:18px">
+      <div>
+        <h3>Silne stranky</h3>
+        <ul class="body-list" style="margin-top:6px">
+          <li>Gemini Live API: real-time audio konverzace</li>
+          <li>14 role-play scenaru pro prakticke situace</li>
+          <li>Nastavitelna strictness (1-10) s 5 urovnemi</li>
+          <li>Session summary (silne stranky, chyby, cviceni)</li>
+          <li>Lesson history + streak tracking + trend</li>
+          <li>Premiovy UI (Avatar mod, animace, dark theme)</li>
+          <li>PWA-ready (manifest, install banner)</li>
+          <li>CZ-first: ceske instrukce a preklady</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Slabe stranky</h3>
+        <ul class="body-list" style="margin-top:6px">
+          <li>App.tsx: 844 radku (monoliticke, tezko udrzovatelne)</li>
+          <li>API klic ve frontendu (bezpecnostni riziko)</li>
+          <li>Deprecated ScriptProcessorNode (Live audio)</li>
+          <li>Zadne testy (unit, integration, e2e)</li>
+          <li>TTS voice selection zavisle na OS</li>
+          <li>Zadna serverova perzistence (jen localStorage)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="card">
+    <h2>Vizualizace</h2>
+    <div class="chart-grid">
+      <div class="chart-box">
+        <h4>Architektura kodu (radky)</h4>
+        <canvas id="codeChart" height="220"></canvas>
+      </div>
+      <div class="chart-box">
+        <h4>Vyvoj poctu funkci (v1.0 - v1.3)</h4>
+        <canvas id="featureChart" height="220"></canvas>
+      </div>
+      <div class="chart-box">
+        <h4>Tech stack rozlozeni</h4>
+        <canvas id="stackChart" height="220"></canvas>
+      </div>
+      <div class="chart-box">
+        <h4>Pokryti funkci vs. konkurence</h4>
+        <canvas id="coverageChart" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURES TABLE -->
+  <div class="card">
+    <h2>Feature matrix</h2>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Funkce</th>
+            <th>Status</th>
+            <th>Verze</th>
+            <th>Popis</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Gemini Chat (Legacy)</strong></td>
+            <td><span class="rag green">Hotovo</span></td>
+            <td>v1.0.0</td>
+            <td>Text-based AI konverzace s Gemini</td>
+          </tr>
+          <tr>
+            <td><strong>Avatar Mode</strong></td>
+            <td><span class="rag green">Hotovo</span></td>
+            <td>v1.0.0</td>
+            <td>Vizualni avatar (Sarah/Tom/custom)</td>
+          </tr>
+          <tr>
+            <td><strong>CEFR Level Assessment</strong></td>
+            <td><span class="rag green">Hotovo</span></td>
+            <td>v1.0.0</td>
+            <td>Automaticke urceni urovne A1-C2</td>
+          </tr>
+          <tr>
+            <td><strong>TTS + STT</strong></td>
+            <td><span class="rag green">Hotovo</span></td>
+            <td>v1.0.0</td>
+            <td>Web Speech API (US/UK accent, M/F)</td>
+          </tr>
+          <tr>
+            <td><strong>Gemini Live API</strong></td>
+            <td><span class="rag green">Hotovo</span></td>
+            <td>v1.1.0</td>
+            <td>Real-time audio streaming konverzace</td>
+          </tr>
+          <tr>
+            <td><strong>Role-play Scenarios</strong></td>
+            <td><span class="rag green">Hotovo</span></td>
+            <td>v1.1.0</td>
+            <td>14 situaci (shopping, airport, doctor...)</td>
+          </tr>
+          <tr>
+            <td><strong>Session Summary</strong></td>
+            <td><span class="rag green">Hotovo</span></td>
+            <td>v1.2.0</td>
+            <td>Strengths, errors, practice sentences</td>
+          </tr>
+          <tr>
+            <td><strong>Lesson History + Progress</strong></td>
+            <td><span class="rag green">Hotovo</span></td>
+            <td>v1.2.0</td>
+            <td>Streak, trend, speaking time tracking</td>
+          </tr>
+          <tr>
+            <td><strong>One-tap Corrections</strong></td>
+            <td><span class="rag green">Hotovo</span></td>
+            <td>v1.2.0</td>
+            <td>Retry corrected + Practice 3 variants</td>
+          </tr>
+          <tr>
+            <td><strong>Strictness Scale (1-10)</strong></td>
+            <td><span class="rag green">Hotovo</span></td>
+            <td>v1.2.0</td>
+            <td>5 urovni korekci od minimal po drill</td>
+          </tr>
+          <tr>
+            <td><strong>Audit opravy (UX, bugy)</strong></td>
+            <td><span class="rag green">Hotovo</span></td>
+            <td>v1.3.0</td>
+            <td>Diakritika, memory leak fix, DRY</td>
+          </tr>
+          <tr>
+            <td><strong>Backend proxy (API key)</strong></td>
+            <td><span class="rag red">Chybi</span></td>
+            <td>--</td>
+            <td>API klic je exposed ve frontendu</td>
+          </tr>
+          <tr>
+            <td><strong>AudioWorklet</strong></td>
+            <td><span class="rag red">Chybi</span></td>
+            <td>--</td>
+            <td>Nahrada deprecated ScriptProcessorNode</td>
+          </tr>
+          <tr>
+            <td><strong>Test suite</strong></td>
+            <td><span class="rag red">Chybi</span></td>
+            <td>--</td>
+            <td>Zadne unit/integration testy</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TECH STACK -->
+  <div class="card">
+    <h2>Tech Stack</h2>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Technologie</th>
+            <th>Verze</th>
+            <th>Ucel</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>React</strong></td>
+            <td>19.2.4</td>
+            <td>UI framework</td>
+            <td><span class="rag green">Aktualni</span></td>
+          </tr>
+          <tr>
+            <td><strong>TypeScript</strong></td>
+            <td>5.8.2</td>
+            <td>Type safety</td>
+            <td><span class="rag green">Aktualni</span></td>
+          </tr>
+          <tr>
+            <td><strong>Vite</strong></td>
+            <td>6.2.0</td>
+            <td>Build + dev server</td>
+            <td><span class="rag green">Aktualni</span></td>
+          </tr>
+          <tr>
+            <td><strong>@google/genai</strong></td>
+            <td>1.40.0</td>
+            <td>Gemini AI SDK</td>
+            <td><span class="rag green">Aktualni</span></td>
+          </tr>
+          <tr>
+            <td><strong>Gemini Model</strong></td>
+            <td>gemini-3-flash-preview</td>
+            <td>AI model</td>
+            <td><span class="rag amber">Preview</span></td>
+          </tr>
+          <tr>
+            <td><strong>Web Speech API</strong></td>
+            <td>Browser native</td>
+            <td>TTS + STT</td>
+            <td><span class="rag green">Stabilni</span></td>
+          </tr>
+          <tr>
+            <td><strong>ScriptProcessorNode</strong></td>
+            <td>Deprecated</td>
+            <td>Live audio processing</td>
+            <td><span class="rag red">Deprecated</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ISSUES -->
+  <div class="card">
+    <h2>Issues a technicky dluh</h2>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Priorita</th>
+            <th>Oblast</th>
+            <th>Popis</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="p0">P0</span></td>
+            <td>Bezpecnost</td>
+            <td>API klic (process.env.API_KEY) exposed v client-side kodu</td>
+            <td><span class="rag red">Otevreno</span></td>
+          </tr>
+          <tr>
+            <td><span class="p1">P1</span></td>
+            <td>Architektura</td>
+            <td>App.tsx 844 radku — rozdelit na Layout, Header, SessionProvider</td>
+            <td><span class="rag red">Otevreno</span></td>
+          </tr>
+          <tr>
+            <td><span class="p1">P1</span></td>
+            <td>Audio</td>
+            <td>Deprecated ScriptProcessorNode v useLiveAPI.ts — migrace na AudioWorklet</td>
+            <td><span class="rag red">Otevreno</span></td>
+          </tr>
+          <tr>
+            <td><span class="p1">P1</span></td>
+            <td>Kvalita</td>
+            <td>Zadne unit/integration testy</td>
+            <td><span class="rag red">Otevreno</span></td>
+          </tr>
+          <tr>
+            <td><span class="p2">P2</span></td>
+            <td>TTS</td>
+            <td>Voice selection zavisle na OS (hardcoded jmena hlasu)</td>
+            <td><span class="rag amber">Castecne (v1.3)</span></td>
+          </tr>
+          <tr>
+            <td><span class="p2">P2</span></td>
+            <td>State</td>
+            <td>Globalni let chatSession v services — neni React-idiomatic</td>
+            <td><span class="rag red">Otevreno</span></td>
+          </tr>
+          <tr>
+            <td><span class="p3">P3</span></td>
+            <td>i18n</td>
+            <td>Ceske retezce hardcoded (chybi i18n system)</td>
+            <td><span class="rag red">Otevreno</span></td>
+          </tr>
+          <tr>
+            <td><span class="p3">P3</span></td>
+            <td>PWA</td>
+            <td>PWA install logika primo v App.tsx (mel by byt custom hook)</td>
+            <td><span class="rag red">Otevreno</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- VERSION TIMELINE -->
+  <div class="card">
+    <h2>Historie verzi</h2>
+    <div class="timeline">
+      <div class="timeline-item done">
+        <div class="timeline-ver">v1.0.0 — 2026-01-30</div>
+        <div class="timeline-desc">Initial release: chat + avatar rezim, CEFR level, TTS/STT, zakladni statistiky.</div>
+      </div>
+      <div class="timeline-item done">
+        <div class="timeline-ver">v1.1.0 — 2026-02-10</div>
+        <div class="timeline-desc" style="margin-top:5px">
+          <span class="feature-tag new">Gemini Live API</span>
+          <span class="feature-tag new">Role-play scenare</span>
+          <span class="feature-tag new">Session restart</span>
+        </div>
+      </div>
+      <div class="timeline-item done">
+        <div class="timeline-ver">v1.2.0 — 2026-02-15</div>
+        <div class="timeline-desc" style="margin-top:5px">
+          <span class="feature-tag new">Session summary</span>
+          <span class="feature-tag new">Lesson history</span>
+          <span class="feature-tag new">One-tap korekce</span>
+          <span class="feature-tag new">Realtime stavy</span>
+        </div>
+      </div>
+      <div class="timeline-item done">
+        <div class="timeline-ver">v1.2.1-v1.2.3 — 2026-03-07</div>
+        <div class="timeline-desc">UI polish: correction bublina, line-clamp fix, format korekci.</div>
+      </div>
+      <div class="timeline-item done">
+        <div class="timeline-ver" style="color:var(--success)">v1.3.0 — 2026-03-07 (Aktualni)</div>
+        <div class="timeline-desc" style="margin-top:5px">
+          <span class="feature-tag new">Audit opravy</span>
+          <span class="feature-tag new">Memory leak fix</span>
+          <span class="feature-tag new">DRY refactoring</span>
+          <span class="feature-tag new">STT accent fix</span>
+          <span class="feature-tag new">Race condition fix</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-ver" style="color:var(--on-surface-dim)">v1.4.0 — Planovano</div>
+        <div class="timeline-desc" style="margin-top:5px">
+          <span class="feature-tag">App.tsx refaktoring</span>
+          <span class="feature-tag">Custom hooks</span>
+          <span class="feature-tag">React Context</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-ver" style="color:var(--on-surface-dim)">v1.5.0 — Planovano</div>
+        <div class="timeline-desc" style="margin-top:5px">
+          <span class="feature-tag">Backend proxy</span>
+          <span class="feature-tag">API key security</span>
+          <span class="feature-tag">AudioWorklet</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROADMAP -->
+  <div class="card">
+    <h2>Doporucene dalsi kroky</h2>
+    <div class="two-col">
+      <div>
+        <h3>Kriticke (ihned)</h3>
+        <ol class="body-list" style="margin-top:6px">
+          <li style="margin-bottom:8px">Skryt API klic za backend proxy (Cloudflare Workers / Vercel Edge)</li>
+          <li>Refaktoring App.tsx: vyextrahovat usePWA, useSession, useScenario</li>
+        </ol>
+        <h3 style="margin-top:16px">Kratkodobe (v1.4-v1.5)</h3>
+        <ul class="body-list" style="margin-top:6px">
+          <li>AudioWorklet migrace (nahrada deprecated ScriptProcessorNode)</li>
+          <li>Dynamic voice list (system voices s Test Play)</li>
+          <li>Zakladni test suite (Vitest + React Testing Library)</li>
+          <li>React Context pro globalni state</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Strednedobé (v2.0)</h3>
+        <ul class="body-list" style="margin-top:6px">
+          <li>i18n system (locales/cs.json, locales/en.json)</li>
+          <li>Serverova perzistence lekci (Cloudflare D1/KV)</li>
+          <li>Offline-first s sync</li>
+          <li>Gamifikace (XP, achievements, daily goals)</li>
+        </ul>
+        <h3 style="margin-top:16px">Pruzkumne (v3.0)</h3>
+        <ul class="body-list" style="margin-top:6px">
+          <li>Vice jazyku (ne jen CZ->EN)</li>
+          <li>Custom scenare od uzivatele</li>
+          <li>Vocabulary trainer s SRS (spaced repetition)</li>
+          <li>Pronunciation scoring (speech analysis)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;font-size:0.78rem;color:var(--on-surface-dim);padding:20px 0">
+    Aria English Tutor v1.3.0 &nbsp;·&nbsp; Report vygenerovan: 2026-03-15 &nbsp;·&nbsp; PAI &nbsp;·&nbsp; tomaspatloka
+  </div>
+
+</div>
+
+<script>
+// Dark-mode chart defaults
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+
+const clrError   = '#f87171';
+const clrWarning = '#fbbf24';
+const clrSuccess = '#4ade80';
+const clrPrimary = '#60a5fa';
+const clrSecondary = '#94a3b8';
+const clrTertiary = '#c084fc';
+
+const gridColor = 'rgba(255,255,255,0.06)';
+
+// Code structure doughnut
+new Chart(document.getElementById('codeChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['App.tsx (844)', 'Components (8)', 'Hooks (3)', 'Services (1)', 'Utils (4)', 'Types+Constants (273)'],
+    datasets: [{
+      data: [844, 600, 350, 160, 200, 273],
+      backgroundColor: [clrError, clrPrimary, clrSuccess, clrTertiary, clrWarning, clrSecondary],
+      borderWidth: 0,
+      borderRadius: 6,
+      hoverOffset: 6,
+    }],
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { usePointStyle: true, padding: 10, font: { size: 10 }, color: '#94a3b8' },
+      },
+    },
+    cutout: '62%',
+  },
+});
+
+// Feature count line chart
+new Chart(document.getElementById('featureChart'), {
+  type: 'line',
+  data: {
+    labels: ['v1.0.0', 'v1.1.0', 'v1.2.0', 'v1.2.3', 'v1.3.0'],
+    datasets: [{
+      label: 'Pocet funkci',
+      data: [6, 10, 18, 20, 22],
+      borderColor: clrPrimary,
+      backgroundColor: 'rgba(96,165,250,0.12)',
+      borderWidth: 2.5,
+      pointRadius: 5,
+      pointBackgroundColor: clrPrimary,
+      pointBorderColor: '#1a1d2e',
+      pointBorderWidth: 2,
+      fill: true,
+      tension: 0.35,
+    }],
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        ticks: { precision: 0, color: '#94a3b8' },
+        grid: { color: gridColor },
+        beginAtZero: true,
+      },
+      x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+    },
+  },
+});
+
+// Tech stack bar
+new Chart(document.getElementById('stackChart'), {
+  type: 'bar',
+  data: {
+    labels: ['React', 'TypeScript', 'Gemini SDK', 'Vite', 'Web APIs', 'CSS/Tailwind'],
+    datasets: [{
+      label: 'Relevance (%)',
+      data: [90, 85, 95, 70, 80, 75],
+      backgroundColor: [
+        'rgba(96,165,250,0.75)',
+        'rgba(96,165,250,0.65)',
+        'rgba(192,132,252,0.75)',
+        'rgba(74,222,128,0.65)',
+        'rgba(251,191,36,0.65)',
+        'rgba(96,165,250,0.55)',
+      ],
+      borderColor: [clrPrimary, clrPrimary, clrTertiary, clrSuccess, clrWarning, clrPrimary],
+      borderWidth: 1,
+      borderRadius: 8,
+      borderSkipped: false,
+    }],
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        ticks: { precision: 0, color: '#94a3b8' },
+        grid: { color: gridColor },
+        max: 100,
+      },
+      x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+    },
+  },
+});
+
+// Coverage radar
+new Chart(document.getElementById('coverageChart'), {
+  type: 'radar',
+  data: {
+    labels: ['AI Chat', 'Live Audio', 'Scenare', 'Progress', 'Offline', 'Testy', 'Security'],
+    datasets: [
+      {
+        label: 'Aria v1.3',
+        data: [100, 90, 100, 85, 30, 5, 30],
+        borderColor: clrPrimary,
+        backgroundColor: 'rgba(96,165,250,0.18)',
+        borderWidth: 2,
+        pointRadius: 4,
+        pointBackgroundColor: clrPrimary,
+      },
+      {
+        label: 'Idealni stav',
+        data: [100, 100, 100, 100, 90, 80, 90],
+        borderColor: clrSecondary,
+        backgroundColor: 'rgba(148,163,184,0.07)',
+        borderWidth: 1.5,
+        pointRadius: 3,
+        borderDash: [4, 3],
+      },
+    ],
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, font: { size: 10 }, color: '#94a3b8' } },
+    },
+    scales: {
+      r: {
+        beginAtZero: true,
+        max: 100,
+        ticks: { display: false },
+        grid: { color: 'rgba(255,255,255,0.07)' },
+        angleLines: { color: 'rgba(255,255,255,0.07)' },
+        pointLabels: { font: { size: 9 }, color: '#94a3b8' },
+      },
+    },
+  },
+});
+</script>
+</body>
+</html>

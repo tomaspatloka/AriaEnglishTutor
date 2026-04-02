@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#059669"/>
+      <stop offset="100%" style="stop-color:#10b981"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#34d399;stop-opacity:0.4"/>
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="url(#bg)"/>
+  <!-- Subtle shine -->
+  <circle cx="200" cy="200" r="180" fill="url(#shine)"/>
+  <!-- Speech bubble shape -->
+  <path d="M128 160 C128 130, 152 108, 184 108 L328 108 C360 108, 384 130, 384 160 L384 280 C384 310, 360 332, 328 332 L240 332 L192 380 L192 332 L184 332 C152 332, 128 310, 128 280 Z" fill="white" opacity="0.95"/>
+  <!-- Letter A - stylized -->
+  <text x="256" y="262" text-anchor="middle" dominant-baseline="central" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-weight="900" font-size="160" fill="#059669" letter-spacing="-8">A</text>
+  <!-- Small microphone icon bottom-right -->
+  <g transform="translate(340, 340)">
+    <circle cx="32" cy="32" r="36" fill="#0f172a" opacity="0.85"/>
+    <rect x="24" y="12" width="16" height="28" rx="8" fill="#34d399"/>
+    <path d="M18 32 C18 44, 26 52, 32 52 C38 52, 46 44, 46 32" stroke="#34d399" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <line x1="32" y1="52" x2="32" y2="58" stroke="#34d399" stroke-width="3" stroke-linecap="round"/>
+    <line x1="24" y1="58" x2="40" y2="58" stroke="#34d399" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
