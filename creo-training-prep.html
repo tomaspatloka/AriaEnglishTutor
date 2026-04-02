@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Creo Parametric Motion — English Training Prep</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #232736;
+    --accent: #6c63ff;
+    --accent2: #ff6b6b;
+    --accent3: #4ecdc4;
+    --accent4: #ffd93d;
+    --text: #e4e4e7;
+    --text2: #9ca3af;
+    --border: #2d3148;
+    --green: #22c55e;
+    --orange: #f59e0b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .hero {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+    padding: 3rem 2rem;
+    text-align: center;
+    border-bottom: 2px solid var(--accent);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(108,99,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 50%, rgba(78,205,196,0.08) 0%, transparent 50%);
+    animation: pulse 8s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+  .hero h1 { font-size: 2.2rem; font-weight: 800; position: relative; }
+  .hero h1 span { color: var(--accent); }
+  .hero p { color: var(--text2); margin-top: 0.5rem; font-size: 1.1rem; position: relative; }
+  .hero .badge {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    position: relative;
+  }
+
+  /* Navigation */
+  .nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nav a {
+    color: var(--text2);
+    text-decoration: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .nav a:hover, .nav a.active {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* Main layout */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 3rem;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border);
+  }
+  .section-header .icon {
+    font-size: 1.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface2);
+    border-radius: 10px;
+  }
+  .section-header h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+  .section-header h2 small {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text2);
+    font-weight: 400;
+  }
+
+  /* Cards grid */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1rem;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .card h3 .tag {
+    font-size: 0.7rem;
+    background: var(--accent);
+    color: white;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 500;
+  }
+
+  /* Vocabulary table */
+  .vocab-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .vocab-table tr { border-bottom: 1px solid var(--border); }
+  .vocab-table tr:last-child { border: none; }
+  .vocab-table td {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.9rem;
+  }
+  .vocab-table .en {
+    font-weight: 600;
+    color: var(--accent3);
+    width: 45%;
+  }
+  .vocab-table .pron {
+    color: var(--text2);
+    font-style: italic;
+    font-size: 0.8rem;
+    width: 25%;
+  }
+  .vocab-table .cz {
+    color: var(--text2);
+    width: 30%;
+  }
+
+  /* Phrase blocks */
+  .phrase {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent);
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0 8px 8px 0;
+  }
+  .phrase .en {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent3);
+  }
+  .phrase .cz {
+    font-size: 0.85rem;
+    color: var(--text2);
+    margin-top: 0.2rem;
+  }
+  .phrase .tip {
+    font-size: 0.8rem;
+    color: var(--orange);
+    margin-top: 0.25rem;
+  }
+  .phrase.important { border-left-color: var(--accent2); }
+  .phrase.important .en { color: var(--accent2); }
+
+  /* Flashcard mode */
+  .flashcard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+  }
+  .flashcard:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .flashcard .front { font-size: 1.2rem; font-weight: 700; }
+  .flashcard .back {
+    display: none;
+    font-size: 1rem;
+    color: var(--accent3);
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+    width: 100%;
+  }
+  .flashcard.revealed .back { display: block; }
+  .flashcard .hint {
+    font-size: 0.75rem;
+    color: var(--text2);
+    margin-top: 0.5rem;
+  }
+
+  /* Progress tracker */
+  .progress-bar {
+    background: var(--surface2);
+    border-radius: 999px;
+    height: 8px;
+    margin: 1rem 0;
+    overflow: hidden;
+  }
+  .progress-bar .fill {
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.5s;
+  }
+
+  /* Checklist */
+  .checklist { list-style: none; }
+  .checklist li {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+  }
+  .checklist li:last-child { border: none; }
+  .checklist input[type="checkbox"] {
+    width: 1.2rem;
+    height: 1.2rem;
+    accent-color: var(--accent);
+  }
+
+  /* Scenario simulation */
+  .dialogue {
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  .dialogue .line {
+    padding: 0.5rem 0;
+    display: flex;
+    gap: 0.5rem;
+  }
+  .dialogue .speaker {
+    font-weight: 700;
+    min-width: 80px;
+    flex-shrink: 0;
+  }
+  .dialogue .speaker.instructor { color: var(--accent); }
+  .dialogue .speaker.you { color: var(--accent3); }
+  .dialogue .text { color: var(--text); }
+  .dialogue .text-cz { color: var(--text2); font-size: 0.85rem; font-style: italic; }
+
+  /* Tips box */
+  .tip-box {
+    background: linear-gradient(135deg, rgba(108,99,255,0.1), rgba(78,205,196,0.1));
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin: 1rem 0;
+  }
+  .tip-box h4 { color: var(--accent); margin-bottom: 0.5rem; }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text2);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Stats bar */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .stat .number { font-size: 2rem; font-weight: 800; color: var(--accent); }
+  .stat .label { font-size: 0.8rem; color: var(--text2); }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 1.5rem; }
+    .cards { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; color: black; }
+    .nav, .hero::before { display: none; }
+    .card, .phrase, .flashcard, .dialogue { break-inside: avoid; border-color: #ccc; }
+    .vocab-table .en, .phrase .en { color: #1a5276; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Creo Parametric <span>Motion</span> Training</h1>
+  <p>English Preparation Guide &mdash; Creo 10.0.7.0 Mechanism Design</p>
+  <div class="badge">A1 Level &bull; 30 Days to Go</div>
+</div>
+
+<nav class="nav" id="nav">
+  <a href="#survival">Survival Phrases</a>
+  <a href="#vocab-motion">Motion Vocabulary</a>
+  <a href="#vocab-ui">Creo UI</a>
+  <a href="#questions">Asking Questions</a>
+  <a href="#instructions">Understanding Instructions</a>
+  <a href="#dialogues">Practice Dialogues</a>
+  <a href="#smalltalk">Small Talk</a>
+  <a href="#flashcards">Flashcards</a>
+  <a href="#plan">30-Day Plan</a>
+</nav>
+
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat"><div class="number">120+</div><div class="label">Key Terms</div></div>
+    <div class="stat"><div class="number">50+</div><div class="label">Useful Phrases</div></div>
+    <div class="stat"><div class="number">8</div><div class="label">Practice Dialogues</div></div>
+    <div class="stat"><div class="number">30</div><div class="label">Days to Prepare</div></div>
+  </div>
+
+  <!-- ==================== SURVIVAL PHRASES ==================== -->
+  <div class="section" id="survival">
+    <div class="section-header">
+      <div class="icon">🆘</div>
+      <h2>Survival Phrases <small>The 10 phrases you absolutely MUST know</small></h2>
+    </div>
+
+    <div class="phrase important">
+      <div class="en">"Sorry, could you repeat that?"</div>
+      <div class="cz">Promiňte, mohl byste to zopakovat?</div>
+      <div class="tip">The #1 most important phrase. Use it without hesitation.</div>
+    </div>
+    <div class="phrase important">
+      <div class="en">"Could you speak more slowly, please?"</div>
+      <div class="cz">Mohl byste mluvit pomaleji, prosím?</div>
+    </div>
+    <div class="phrase important">
+      <div class="en">"I don't understand. What does '___' mean?"</div>
+      <div class="cz">Nerozumím. Co znamená '___'?</div>
+    </div>
+    <div class="phrase">
+      <div class="en">"Could you show that again?"</div>
+      <div class="cz">Mohl byste to ukázat znovu?</div>
+    </div>
+    <div class="phrase">
+      <div class="en">"Which menu is that in?"</div>
+      <div class="cz">V kterém menu to je?</div>
+    </div>
+    <div class="phrase">
+      <div class="en">"I get an error."</div>
+      <div class="cz">Mám chybu / Zobrazuje se mi chyba.</div>
+    </div>
+    <div class="phrase">
+      <div class="en">"My model doesn't move."</div>
+      <div class="cz">Můj model se nehýbe.</div>
+    </div>
+    <div class="phrase">
+      <div class="en">"Is there a shortcut for that?"</div>
+      <div class="cz">Existuje na to zkratka?</div>
+    </div>
+    <div class="phrase">
+      <div class="en">"Can I try it now?"</div>
+      <div class="cz">Mohu to teď zkusit?</div>
+    </div>
+    <div class="phrase">
+      <div class="en">"Thank you, I understand now."</div>
+      <div class="cz">Děkuji, teď to chápu.</div>
+    </div>
+  </div>
+
+  <!-- ==================== MOTION VOCABULARY ==================== -->
+  <div class="section" id="vocab-motion">
+    <div class="section-header">
+      <div class="icon">⚙️</div>
+      <h2>Motion &amp; Mechanism Vocabulary <small>Creo Mechanism Design (MDO) core terms</small></h2>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <h3>Connections / Joints <span class="tag">CRITICAL</span></h3>
+        <table class="vocab-table">
+          <tr><td class="en">Pin joint</td><td class="pron">/pɪn dʒɔɪnt/</td><td class="cz">čepový spoj (rotace)</td></tr>
+          <tr><td class="en">Slider joint</td><td class="pron">/ˈslaɪdər/</td><td class="cz">posuvný spoj</td></tr>
+          <tr><td class="en">Cylinder joint</td><td class="pron">/ˈsɪlɪndər/</td><td class="cz">válcový spoj</td></tr>
+          <tr><td class="en">Planar joint</td><td class="pron">/ˈpleɪnər/</td><td class="cz">rovinný spoj</td></tr>
+          <tr><td class="en">Ball joint</td><td class="pron">/bɔːl/</td><td class="cz">kulový kloub</td></tr>
+          <tr><td class="en">Bearing joint</td><td class="pron">/ˈberɪŋ/</td><td class="cz">ložiskový spoj</td></tr>
+          <tr><td class="en">Weld joint</td><td class="pron">/weld/</td><td class="cz">svar (rigid)</td></tr>
+          <tr><td class="en">6DOF / General</td><td class="pron">/sɪks diː oʊ ef/</td><td class="cz">obecný spoj (6 stupňů volnosti)</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Mechanism Components</h3>
+        <table class="vocab-table">
+          <tr><td class="en">Servo motor</td><td class="pron">/ˈsɜːrvoʊ/</td><td class="cz">servomotor</td></tr>
+          <tr><td class="en">Spring</td><td class="pron">/sprɪŋ/</td><td class="cz">pružina</td></tr>
+          <tr><td class="en">Damper</td><td class="pron">/ˈdæmpər/</td><td class="cz">tlumič</td></tr>
+          <tr><td class="en">Cam / Cam follower</td><td class="pron">/kæm/</td><td class="cz">vačka / sledovač vačky</td></tr>
+          <tr><td class="en">Gear pair</td><td class="pron">/ɡɪr per/</td><td class="cz">ozubený pár</td></tr>
+          <tr><td class="en">Belt / Chain drive</td><td class="pron">/belt/ /tʃeɪn/</td><td class="cz">řemenový / řetězový převod</td></tr>
+          <tr><td class="en">Slot / Slot follower</td><td class="pron">/slɒt/</td><td class="cz">drážka / sledovač drážky</td></tr>
+          <tr><td class="en">Ground body</td><td class="pron">/ɡraʊnd/</td><td class="cz">pevné těleso (kostra)</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Analysis &amp; Simulation <span class="tag">CRITICAL</span></h3>
+        <table class="vocab-table">
+          <tr><td class="en">Kinematic analysis</td><td class="pron">/ˌkɪnəˈmætɪk/</td><td class="cz">kinematická analýza</td></tr>
+          <tr><td class="en">Dynamic analysis</td><td class="pron">/daɪˈnæmɪk/</td><td class="cz">dynamická analýza</td></tr>
+          <tr><td class="en">Force balance</td><td class="pron">/fɔːrs/</td><td class="cz">silová rovnováha</td></tr>
+          <tr><td class="en">Degrees of freedom</td><td class="pron">/dɪˈɡriːz/</td><td class="cz">stupně volnosti (DOF)</td></tr>
+          <tr><td class="en">Time step</td><td class="pron">/taɪm step/</td><td class="cz">časový krok</td></tr>
+          <tr><td class="en">Initial conditions</td><td class="pron">/ɪˈnɪʃəl/</td><td class="cz">počáteční podmínky</td></tr>
+          <tr><td class="en">Interference / Collision</td><td class="pron">/ˌɪntərˈfɪrəns/</td><td class="cz">kolize</td></tr>
+          <tr><td class="en">Trace curve</td><td class="pron">/treɪs kɜːrv/</td><td class="cz">trasová křivka</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Motion Properties</h3>
+        <table class="vocab-table">
+          <tr><td class="en">Position</td><td class="pron">/pəˈzɪʃən/</td><td class="cz">poloha</td></tr>
+          <tr><td class="en">Velocity</td><td class="pron">/vəˈlɒsəti/</td><td class="cz">rychlost</td></tr>
+          <tr><td class="en">Acceleration</td><td class="pron">/əkˌseləˈreɪʃən/</td><td class="cz">zrychlení</td></tr>
+          <tr><td class="en">Angular velocity</td><td class="pron">/ˈæŋɡjələr/</td><td class="cz">úhlová rychlost</td></tr>
+          <tr><td class="en">Torque</td><td class="pron">/tɔːrk/</td><td class="cz">kroutící moment</td></tr>
+          <tr><td class="en">Friction</td><td class="pron">/ˈfrɪkʃən/</td><td class="cz">tření</td></tr>
+          <tr><td class="en">Gravity</td><td class="pron">/ˈɡrævɪti/</td><td class="cz">gravitace</td></tr>
+          <tr><td class="en">Payload / Load</td><td class="pron">/ˈpeɪloʊd/</td><td class="cz">zatížení</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Servo Motor Settings</h3>
+        <table class="vocab-table">
+          <tr><td class="en">Profile type</td><td class="pron">/ˈproʊfaɪl/</td><td class="cz">typ profilu</td></tr>
+          <tr><td class="en">Constant / Ramp / Cosine</td><td class="pron"></td><td class="cz">konstantní / rampa / kosinusový</td></tr>
+          <tr><td class="en">Table driven</td><td class="pron"></td><td class="cz">řízeno tabulkou</td></tr>
+          <tr><td class="en">Amplitude</td><td class="pron">/ˈæmplɪtjuːd/</td><td class="cz">amplituda</td></tr>
+          <tr><td class="en">Period</td><td class="pron">/ˈpɪriəd/</td><td class="cz">perioda</td></tr>
+          <tr><td class="en">Phase</td><td class="pron">/feɪz/</td><td class="cz">fáze</td></tr>
+          <tr><td class="en">Specification</td><td class="pron">/ˌspesɪfɪˈkeɪʃən/</td><td class="cz">specifikace</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Results &amp; Output</h3>
+        <table class="vocab-table">
+          <tr><td class="en">Measure</td><td class="pron">/ˈmeʒər/</td><td class="cz">měření</td></tr>
+          <tr><td class="en">Graph / Plot</td><td class="pron">/ɡræf/ /plɒt/</td><td class="cz">graf</td></tr>
+          <tr><td class="en">Animation</td><td class="pron">/ˌænɪˈmeɪʃən/</td><td class="cz">animace</td></tr>
+          <tr><td class="en">Playback</td><td class="pron">/ˈpleɪbæk/</td><td class="cz">přehrávání</td></tr>
+          <tr><td class="en">Export / Save as AVI</td><td class="pron">/ɪkˈspɔːrt/</td><td class="cz">export / uložit jako AVI</td></tr>
+          <tr><td class="en">Snapshot</td><td class="pron">/ˈsnæpʃɒt/</td><td class="cz">snímek</td></tr>
+          <tr><td class="en">Interference check</td><td class="pron"></td><td class="cz">kontrola kolizí</td></tr>
+          <tr><td class="en">Motion envelope</td><td class="pron">/ˈenvəloʊp/</td><td class="cz">obálka pohybu</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CREO UI VOCABULARY ==================== -->
+  <div class="section" id="vocab-ui">
+    <div class="section-header">
+      <div class="icon">🖥️</div>
+      <h2>Creo UI Vocabulary <small>Interface elements you'll hear every day</small></h2>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <h3>Interface Elements</h3>
+        <table class="vocab-table">
+          <tr><td class="en">Model Tree</td><td class="pron"></td><td class="cz">strom modelu</td></tr>
+          <tr><td class="en">Ribbon / Tab</td><td class="pron">/ˈrɪbən/</td><td class="cz">pás karet / záložka</td></tr>
+          <tr><td class="en">Dashboard</td><td class="pron">/ˈdæʃbɔːrd/</td><td class="cz">panel nástrojů (dole)</td></tr>
+          <tr><td class="en">Feature</td><td class="pron">/ˈfiːtʃər/</td><td class="cz">prvek</td></tr>
+          <tr><td class="en">Datum plane / axis / point</td><td class="pron">/ˈdeɪtəm/</td><td class="cz">ref. rovina / osa / bod</td></tr>
+          <tr><td class="en">Coordinate system</td><td class="pron">/koʊˈɔːrdɪnət/</td><td class="cz">souřadný systém</td></tr>
+          <tr><td class="en">Constraint</td><td class="pron">/kənˈstreɪnt/</td><td class="cz">vazba</td></tr>
+          <tr><td class="en">Reference</td><td class="pron">/ˈrefərəns/</td><td class="cz">reference</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Common Actions</h3>
+        <table class="vocab-table">
+          <tr><td class="en">Click on / Select</td><td class="pron"></td><td class="cz">klikněte na / vyberte</td></tr>
+          <tr><td class="en">Right-click</td><td class="pron"></td><td class="cz">klikněte pravým</td></tr>
+          <tr><td class="en">Drag (and drop)</td><td class="pron">/dræɡ/</td><td class="cz">přetáhněte</td></tr>
+          <tr><td class="en">Regenerate</td><td class="pron">/rɪˈdʒenəreɪt/</td><td class="cz">regenerovat (Ctrl+G)</td></tr>
+          <tr><td class="en">Undo / Redo</td><td class="pron">/ʌnˈduː/ /riːˈduː/</td><td class="cz">zpět / znovu</td></tr>
+          <tr><td class="en">Save / Save As</td><td class="pron"></td><td class="cz">uložit / uložit jako</td></tr>
+          <tr><td class="en">Edit Definition</td><td class="pron">/ˈdefɪˌnɪʃən/</td><td class="cz">upravit definici</td></tr>
+          <tr><td class="en">Insert &gt; Mechanism</td><td class="pron"></td><td class="cz">Vložit > Mechanismus</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ASKING QUESTIONS ==================== -->
+  <div class="section" id="questions">
+    <div class="section-header">
+      <div class="icon">❓</div>
+      <h2>Asking Questions at Training <small>How to ask about anything in Creo</small></h2>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <h3>How do I...? (Jak...?)</h3>
+        <div class="phrase"><div class="en">"How do I create a pin joint?"</div><div class="cz">Jak vytvořím čepový spoj?</div></div>
+        <div class="phrase"><div class="en">"How do I add a servo motor?"</div><div class="cz">Jak přidám servomotor?</div></div>
+        <div class="phrase"><div class="en">"How do I run the analysis?"</div><div class="cz">Jak spustím analýzu?</div></div>
+        <div class="phrase"><div class="en">"How do I change the time step?"</div><div class="cz">Jak změním časový krok?</div></div>
+        <div class="phrase"><div class="en">"How do I export the animation?"</div><div class="cz">Jak exportuji animaci?</div></div>
+      </div>
+
+      <div class="card">
+        <h3>Where do I find...? (Kde najdu...?)</h3>
+        <div class="phrase"><div class="en">"Where do I find the mechanism tab?"</div><div class="cz">Kde najdu záložku mechanismu?</div></div>
+        <div class="phrase"><div class="en">"Where is the gravity setting?"</div><div class="cz">Kde je nastavení gravitace?</div></div>
+        <div class="phrase"><div class="en">"Where can I see the results?"</div><div class="cz">Kde můžu vidět výsledky?</div></div>
+      </div>
+
+      <div class="card">
+        <h3>What is / What does...? (Co je...?)</h3>
+        <div class="phrase"><div class="en">"What is a degree of freedom?"</div><div class="cz">Co je stupeň volnosti?</div></div>
+        <div class="phrase"><div class="en">"What does this error message mean?"</div><div class="cz">Co znamená tato chybová hláška?</div></div>
+        <div class="phrase"><div class="en">"What is the difference between kinematic and dynamic analysis?"</div><div class="cz">Jaký je rozdíl mezi kinematickou a dynamickou analýzou?</div></div>
+      </div>
+
+      <div class="card">
+        <h3>Problem Reporting (Hlášení problémů)</h3>
+        <div class="phrase"><div class="en">"I get an error when I try to run the analysis."</div><div class="cz">Mám chybu, když zkouším spustit analýzu.</div></div>
+        <div class="phrase"><div class="en">"My assembly has too many degrees of freedom."</div><div class="cz">Moje sestava má příliš mnoho stupňů volnosti.</div></div>
+        <div class="phrase"><div class="en">"The servo motor doesn't move the part."</div><div class="cz">Servomotor nepohybuje součástí.</div></div>
+        <div class="phrase"><div class="en">"The mechanism is locked / overconstrained."</div><div class="cz">Mechanismus je zamčený / převázaný.</div></div>
+        <div class="phrase"><div class="en">"It worked before but now it doesn't regenerate."</div><div class="cz">Předtím to fungovalo, ale teď to neregeneruje.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== UNDERSTANDING INSTRUCTIONS ==================== -->
+  <div class="section" id="instructions">
+    <div class="section-header">
+      <div class="icon">👂</div>
+      <h2>Understanding Instructor's Directions <small>What the instructor will say and what it means</small></h2>
+    </div>
+
+    <div class="tip-box">
+      <h4>Tip: Instructor Commands Pattern</h4>
+      <p>Instructors typically say: <strong>"Go to [Menu] &gt; [Submenu] &gt; [Option]"</strong> or <strong>"Click on [Button]"</strong> or <strong>"Select [Object] in the model tree"</strong>. Listen for the menu/button name &mdash; even if you miss other words, you can find it in the UI.</p>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <h3>Common Instructor Phrases</h3>
+        <div class="phrase"><div class="en">"Go to Applications and switch to Mechanism."</div><div class="cz">Jděte do Applications a přepněte na Mechanism.</div></div>
+        <div class="phrase"><div class="en">"Select the axis of the hole."</div><div class="cz">Vyberte osu díry.</div></div>
+        <div class="phrase"><div class="en">"Now define the connection type as Pin."</div><div class="cz">Teď definujte typ spoje jako Pin.</div></div>
+        <div class="phrase"><div class="en">"Set the velocity to 360 degrees per second."</div><div class="cz">Nastavte rychlost na 360 stupňů za sekundu.</div></div>
+        <div class="phrase"><div class="en">"Hit the play button to see the animation."</div><div class="cz">Stiskněte tlačítko play pro zobrazení animace.</div></div>
+        <div class="phrase"><div class="en">"Make sure there are zero degrees of freedom."</div><div class="cz">Ujistěte se, že je nula stupňů volnosti.</div></div>
+        <div class="phrase"><div class="en">"You need to assemble the part before adding motion."</div><div class="cz">Musíte sestavu sestavit před přidáním pohybu.</div></div>
+      </div>
+
+      <div class="card">
+        <h3>Asking for Clarification</h3>
+        <div class="phrase important"><div class="en">"Sorry, which button do I click?"</div><div class="cz">Promiňte, na které tlačítko mám kliknout?</div></div>
+        <div class="phrase"><div class="en">"Do you mean this one?" (pointing at screen)</div><div class="cz">Myslíte toto? (ukazuje na obrazovku)</div></div>
+        <div class="phrase"><div class="en">"Should I select the surface or the edge?"</div><div class="cz">Mám vybrat plochu nebo hranu?</div></div>
+        <div class="phrase"><div class="en">"I can't find that option in my menu."</div><div class="cz">Nemůžu najít tu možnost v mém menu.</div></div>
+        <div class="phrase"><div class="en">"Wait, I'm one step behind."</div><div class="cz">Počkejte, jsem o krok pozadu.</div></div>
+        <div class="phrase"><div class="en">"Can we take a short break?"</div><div class="cz">Můžeme si dát krátkou pauzu?</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PRACTICE DIALOGUES ==================== -->
+  <div class="section" id="dialogues">
+    <div class="section-header">
+      <div class="icon">💬</div>
+      <h2>Practice Dialogues <small>Realistic training scenarios to rehearse</small></h2>
+    </div>
+
+    <div class="dialogue">
+      <h4 style="margin-bottom: 0.75rem; color: var(--accent);">Scenario 1: Asking about a connection</h4>
+      <div class="line"><span class="speaker instructor">Instructor:</span><span class="text">"Now we'll define the connection between the crank and the base. Select the axis of the pin."</span></div>
+      <div class="line"><span class="speaker you">You:</span><span class="text">"Sorry, which axis? The one on the crank or the base?"</span></div>
+      <div class="line"><span class="speaker you"></span><span class="text-cz">(Promiňte, která osa? Ta na klice nebo na základně?)</span></div>
+      <div class="line"><span class="speaker instructor">Instructor:</span><span class="text">"The one on the crank first, then the base. They need to be aligned."</span></div>
+      <div class="line"><span class="speaker you">You:</span><span class="text">"OK, I selected both. What connection type should I use?"</span></div>
+      <div class="line"><span class="speaker instructor">Instructor:</span><span class="text">"Use a Pin joint — it allows rotation around one axis."</span></div>
+    </div>
+
+    <div class="dialogue">
+      <h4 style="margin-bottom: 0.75rem; color: var(--accent);">Scenario 2: Reporting an error</h4>
+      <div class="line"><span class="speaker you">You:</span><span class="text">"Excuse me, I have a problem. When I run the analysis, I get an error."</span></div>
+      <div class="line"><span class="speaker you"></span><span class="text-cz">(Promiňte, mám problém. Když spustím analýzu, zobrazí se mi chyba.)</span></div>
+      <div class="line"><span class="speaker instructor">Instructor:</span><span class="text">"What does the error message say?"</span></div>
+      <div class="line"><span class="speaker you">You:</span><span class="text">"It says 'redundant constraints detected'."</span></div>
+      <div class="line"><span class="speaker instructor">Instructor:</span><span class="text">"That means your mechanism is overconstrained. Check your connection definitions — you probably have too many constraints on one joint."</span></div>
+      <div class="line"><span class="speaker you">You:</span><span class="text">"How do I fix it? Should I remove one constraint?"</span></div>
+    </div>
+
+    <div class="dialogue">
+      <h4 style="margin-bottom: 0.75rem; color: var(--accent);">Scenario 3: Coffee break small talk</h4>
+      <div class="line"><span class="speaker instructor">Instructor:</span><span class="text">"So, where are you from?"</span></div>
+      <div class="line"><span class="speaker you">You:</span><span class="text">"I'm from the Czech Republic, from Prague."</span></div>
+      <div class="line"><span class="speaker instructor">Instructor:</span><span class="text">"Nice! How long have you been using Creo?"</span></div>
+      <div class="line"><span class="speaker you">You:</span><span class="text">"About five years. But this is my first time with Motion."</span></div>
+      <div class="line"><span class="speaker you"></span><span class="text-cz">(Asi pět let. Ale s Motion pracuji poprvé.)</span></div>
+      <div class="line"><span class="speaker instructor">Instructor:</span><span class="text">"Don't worry, we'll start from the basics."</span></div>
+    </div>
+
+    <div class="dialogue">
+      <h4 style="margin-bottom: 0.75rem; color: var(--accent);">Scenario 4: Lunch / Dinner</h4>
+      <div class="line"><span class="speaker instructor">Instructor:</span><span class="text">"We have a one-hour lunch break. There's a restaurant downstairs."</span></div>
+      <div class="line"><span class="speaker you">You:</span><span class="text">"Thank you. Is there a menu in English?"</span></div>
+      <div class="line"><span class="speaker you"></span><span class="text-cz">(Děkuji. Je tam menu v angličtině?)</span></div>
+      <div class="line"><span class="speaker instructor">Instructor:</span><span class="text">"Yes, they have an English menu. The lunch special is usually good."</span></div>
+      <div class="line"><span class="speaker you">You:</span><span class="text">"Great. What time do we start again?"</span></div>
+      <div class="line"><span class="speaker instructor">Instructor:</span><span class="text">"We resume at 1:30."</span></div>
+    </div>
+  </div>
+
+  <!-- ==================== SMALL TALK ==================== -->
+  <div class="section" id="smalltalk">
+    <div class="section-header">
+      <div class="icon">☕</div>
+      <h2>Small Talk &amp; Social Phrases <small>For breaks, lunch, and networking</small></h2>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <h3>Introductions</h3>
+        <div class="phrase"><div class="en">"Hi, I'm Tomáš from the Czech Republic."</div><div class="cz">Ahoj, jsem Tomáš z České republiky.</div></div>
+        <div class="phrase"><div class="en">"I work as a mechanical engineer."</div><div class="cz">Pracuji jako strojní inženýr.</div></div>
+        <div class="phrase"><div class="en">"I've been using Creo for about five years."</div><div class="cz">Používám Creo asi pět let.</div></div>
+        <div class="phrase"><div class="en">"This is my first time at this training."</div><div class="cz">Jsem tu na tomto školení poprvé.</div></div>
+        <div class="phrase"><div class="en">"Nice to meet you."</div><div class="cz">Těší mě.</div></div>
+      </div>
+
+      <div class="card">
+        <h3>During Breaks</h3>
+        <div class="phrase"><div class="en">"Would you like a coffee?"</div><div class="cz">Dáte si kávu?</div></div>
+        <div class="phrase"><div class="en">"Is there Wi-Fi here? What's the password?"</div><div class="cz">Je tu Wi-Fi? Jaké je heslo?</div></div>
+        <div class="phrase"><div class="en">"Where is the restroom?"</div><div class="cz">Kde je toaleta?</div></div>
+        <div class="phrase"><div class="en">"The training is really interesting."</div><div class="cz">Školení je opravdu zajímavé.</div></div>
+        <div class="phrase"><div class="en">"Do you use Creo at your company too?"</div><div class="cz">Používáte Creo ve vaší firmě také?</div></div>
+      </div>
+
+      <div class="card">
+        <h3>Hotel &amp; Travel</h3>
+        <div class="phrase"><div class="en">"How do I get to the training center?"</div><div class="cz">Jak se dostanu do školicího centra?</div></div>
+        <div class="phrase"><div class="en">"Is there a shuttle from the hotel?"</div><div class="cz">Jezdí shuttle z hotelu?</div></div>
+        <div class="phrase"><div class="en">"Can you recommend a restaurant nearby?"</div><div class="cz">Doporučíte restauraci poblíž?</div></div>
+        <div class="phrase"><div class="en">"What time does breakfast start?"</div><div class="cz">V kolik začíná snídaně?</div></div>
+        <div class="phrase"><div class="en">"I need a taxi to the airport."</div><div class="cz">Potřebuji taxi na letiště.</div></div>
+      </div>
+
+      <div class="card">
+        <h3>End of Day / Goodbye</h3>
+        <div class="phrase"><div class="en">"Thank you for today, I learned a lot."</div><div class="cz">Děkuji za dnešek, hodně jsem se naučil.</div></div>
+        <div class="phrase"><div class="en">"See you tomorrow morning!"</div><div class="cz">Uvidíme se zítra ráno!</div></div>
+        <div class="phrase"><div class="en">"Could you send me the exercise files?"</div><div class="cz">Mohl byste mi poslat cvičební soubory?</div></div>
+        <div class="phrase"><div class="en">"Have a good evening."</div><div class="cz">Hezký večer.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== FLASHCARDS ==================== -->
+  <div class="section" id="flashcards">
+    <div class="section-header">
+      <div class="icon">🃏</div>
+      <h2>Flashcards <small>Click to reveal the English translation</small></h2>
+    </div>
+
+    <p style="color: var(--text2); margin-bottom: 1rem;">Click any card to reveal the answer. Click again to hide.</p>
+
+    <div class="cards" id="flashcard-grid">
+      <!-- Filled by JS -->
+    </div>
+    <div style="text-align: center; margin-top: 1rem;">
+      <button onclick="shuffleFlashcards()" style="background: var(--accent); color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 0.95rem;">Shuffle Cards</button>
+      <button onclick="resetFlashcards()" style="background: var(--surface2); color: var(--text); border: 1px solid var(--border); padding: 0.6rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 0.95rem; margin-left: 0.5rem;">Reset All</button>
+    </div>
+  </div>
+
+  <!-- ==================== 30-DAY PLAN ==================== -->
+  <div class="section" id="plan">
+    <div class="section-header">
+      <div class="icon">📅</div>
+      <h2>30-Day Preparation Plan <small>What to practice each week</small></h2>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <h3>Week 1: Survival Basics</h3>
+        <ul class="checklist">
+          <li><input type="checkbox"> Learn all 10 Survival Phrases by heart</li>
+          <li><input type="checkbox"> Practice saying: "Could you repeat that?" naturally</li>
+          <li><input type="checkbox"> Learn greetings and introductions</li>
+          <li><input type="checkbox"> Do 2x AriaEnglishTutor sessions (Creo Training scenario)</li>
+          <li><input type="checkbox"> Learn numbers 1-100 in English (for dimensions)</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Week 2: Creo Vocabulary</h3>
+        <ul class="checklist">
+          <li><input type="checkbox"> Learn all Joint types (pin, slider, cylinder...)</li>
+          <li><input type="checkbox"> Learn Mechanism components (servo, spring, damper...)</li>
+          <li><input type="checkbox"> Learn Analysis terms (kinematic, dynamic, DOF...)</li>
+          <li><input type="checkbox"> Flashcard drill: 15 min daily</li>
+          <li><input type="checkbox"> Do 3x AriaEnglishTutor sessions</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Week 3: Questions &amp; Problems</h3>
+        <ul class="checklist">
+          <li><input type="checkbox"> Practice "How do I...?" sentences (5 per day)</li>
+          <li><input type="checkbox"> Practice reporting problems ("I get an error...")</li>
+          <li><input type="checkbox"> Rehearse all 4 Practice Dialogues out loud</li>
+          <li><input type="checkbox"> Learn Creo UI vocabulary (menus, buttons)</li>
+          <li><input type="checkbox"> Do 4x AriaEnglishTutor sessions</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Week 4: Full Simulation</h3>
+        <ul class="checklist">
+          <li><input type="checkbox"> Simulate a full training day with Aria (30 min session)</li>
+          <li><input type="checkbox"> Practice small talk (coffee, lunch, hotel)</li>
+          <li><input type="checkbox"> Review all flashcards — aim for 90%+ correct</li>
+          <li><input type="checkbox"> Practice understanding instructor directions</li>
+          <li><input type="checkbox"> Final review of Survival Phrases</li>
+          <li><input type="checkbox"> Pack confidence — you're ready!</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="tip-box" style="margin-top: 1.5rem;">
+      <h4>Pro Tip: Don't aim for perfection</h4>
+      <p>At A1 level, your goal is <strong>communication, not grammar</strong>. If people understand you, you're succeeding. The instructor has taught many non-native speakers and will be patient. The most important skill is <strong>asking when you don't understand</strong> &mdash; practice that the most.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>Creo Parametric Motion Training — English Preparation Guide</p>
+  <p>Built for AriaEnglishTutor | Creo 10.0.7.0 | PTC Mechanism Design</p>
+</div>
+
+<script>
+const flashcardData = [
+  { cz: "čepový spoj", en: "Pin joint" },
+  { cz: "posuvný spoj", en: "Slider joint" },
+  { cz: "válcový spoj", en: "Cylinder joint" },
+  { cz: "kulový kloub", en: "Ball joint" },
+  { cz: "servomotor", en: "Servo motor" },
+  { cz: "pružina", en: "Spring" },
+  { cz: "tlumič", en: "Damper" },
+  { cz: "vačka", en: "Cam" },
+  { cz: "ozubený pár", en: "Gear pair" },
+  { cz: "řemenový převod", en: "Belt drive" },
+  { cz: "kinematická analýza", en: "Kinematic analysis" },
+  { cz: "dynamická analýza", en: "Dynamic analysis" },
+  { cz: "stupně volnosti", en: "Degrees of freedom (DOF)" },
+  { cz: "silová rovnováha", en: "Force balance" },
+  { cz: "počáteční podmínky", en: "Initial conditions" },
+  { cz: "časový krok", en: "Time step" },
+  { cz: "kolize", en: "Interference / Collision" },
+  { cz: "rychlost", en: "Velocity" },
+  { cz: "zrychlení", en: "Acceleration" },
+  { cz: "kroutící moment", en: "Torque" },
+  { cz: "tření", en: "Friction" },
+  { cz: "gravitace", en: "Gravity" },
+  { cz: "strom modelu", en: "Model Tree" },
+  { cz: "vazba", en: "Constraint" },
+  { cz: "regenerovat", en: "Regenerate" },
+  { cz: "ref. rovina", en: "Datum plane" },
+  { cz: "animace", en: "Animation" },
+  { cz: "graf", en: "Graph / Plot" },
+  { cz: "měření", en: "Measure" },
+  { cz: "amplituda", en: "Amplitude" },
+  { cz: "Promiňte, mohl byste to zopakovat?", en: "Sorry, could you repeat that?" },
+  { cz: "Jak vytvořím...?", en: "How do I create...?" },
+  { cz: "Kde najdu...?", en: "Where do I find...?" },
+  { cz: "Mám chybu.", en: "I get an error." },
+  { cz: "Můj model se nehýbe.", en: "My model doesn't move." },
+  { cz: "Co znamená...?", en: "What does ... mean?" },
+  { cz: "Mohl byste mluvit pomaleji?", en: "Could you speak more slowly?" },
+  { cz: "Počkejte, jsem o krok pozadu.", en: "Wait, I'm one step behind." },
+  { cz: "Děkuji za dnešek.", en: "Thank you for today." },
+  { cz: "Uvidíme se zítra.", en: "See you tomorrow." },
+];
+
+function renderFlashcards(data) {
+  const grid = document.getElementById('flashcard-grid');
+  grid.innerHTML = data.map((item, i) => `
+    <div class="flashcard" onclick="this.classList.toggle('revealed')">
+      <div class="front">${item.cz}</div>
+      <div class="back">${item.en}</div>
+      <div class="hint">click to reveal</div>
+    </div>
+  `).join('');
+}
+
+function shuffleFlashcards() {
+  const shuffled = [...flashcardData].sort(() => Math.random() - 0.5);
+  renderFlashcards(shuffled);
+}
+
+function resetFlashcards() {
+  renderFlashcards(flashcardData);
+}
+
+// Save checklist state
+document.addEventListener('change', (e) => {
+  if (e.target.type === 'checkbox') {
+    const checkboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+    const states = Array.from(checkboxes).map(cb => cb.checked);
+    localStorage.setItem('creo-prep-checklist', JSON.stringify(states));
+    updateProgress();
+  }
+});
+
+function loadChecklist() {
+  const saved = localStorage.getItem('creo-prep-checklist');
+  if (saved) {
+    const states = JSON.parse(saved);
+    const checkboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+    checkboxes.forEach((cb, i) => { if (states[i]) cb.checked = true; });
+  }
+}
+
+function updateProgress() {
+  const checkboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+  const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+  const total = checkboxes.length;
+  const pct = Math.round((checked / total) * 100);
+  const bar = document.getElementById('progress-fill');
+  const label = document.getElementById('progress-label');
+  if (bar) bar.style.width = pct + '%';
+  if (label) label.textContent = `${checked}/${total} tasks (${pct}%)`;
+}
+
+// Init
+renderFlashcards(flashcardData);
+loadChecklist();
+</script>
+
+</body>
+</html>
