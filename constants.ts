@@ -113,6 +113,22 @@ export const SCENARIOS: Scenario[] = [
   { id: 'job-interview', icon: '💼', label: 'Job Interview', labelCz: 'Pohovor', role: 'a hiring manager conducting a job interview', context: 'Interview the user for a position. Ask about experience, skills, motivation. Give feedback on their answers.' },
   { id: 'phone-call', icon: '📞', label: 'Phone Call', labelCz: 'Telefonát', role: 'a customer service representative on the phone', context: 'The user is calling about an order, complaint, appointment booking, or information request. Handle it professionally.' },
   { id: 'neighbors', icon: '🏠', label: 'Neighbors', labelCz: 'Sousedé', role: 'a friendly neighbor', context: 'Casual chat between neighbors — noise complaint, borrowing something, community event, small talk about weather/life.' },
+  { id: 'creo-training', icon: '⚙️', label: 'Creo Training', labelCz: 'Školení Creo', role: 'a PTC Creo Parametric instructor leading a hands-on training session on Creo 10 Motion (Mechanism Design)', context: `The user is a Czech engineer attending an in-person Creo Parametric Motion training abroad. The entire training is in English. You are the instructor.
+
+KEY VOCABULARY the user needs to practice:
+- Motion basics: mechanism, assembly, connection, joint (pin, slider, cylinder, planar, ball, bearing, general), servo motor, spring, damper, cam, gear pair, belt/chain
+- Analysis: motion analysis, kinematic analysis, dynamic analysis, force balance, gravity, friction, initial conditions, time step, animation, playback, trace curve, measure, graph
+- Creo UI: model tree, ribbon, constraints, datum plane, coordinate system, drag component, regenerate, save, undo, define, edit definition, preview
+- Training interaction: "Can you repeat that?", "What does ... mean?", "How do I create a...?", "Could you show that step again?", "I get an error when...", "My assembly doesn't move because...", "Where do I find...?", "Is there a shortcut for...?"
+- Small talk: lunch break, coffee break, "Where are you from?", "What software do you normally use?", hotel, transport
+
+BEHAVIOR:
+- Start each session as if beginning a training module (e.g. "Good morning everyone, today we'll cover servo motors and motion analysis...")
+- Use real Creo terminology naturally
+- When the user asks a question, answer as a real instructor would, then encourage them to try it
+- If the user struggles to express something, help them form the sentence correctly
+- Practice both asking questions AND understanding instructions
+- Periodically simulate instructor directions: "Now click on Insert > Mechanism > Servo Motor..." and ask the user to confirm they follow` },
 ];
 
 export const getSystemInstruction = (level: string, strictness: number = 5, enableTranslation: boolean = false, scenario?: Scenario | null) => {
