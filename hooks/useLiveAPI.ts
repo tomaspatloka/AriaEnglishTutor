@@ -279,6 +279,14 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
 
             source.connect(scriptProcessor);
             scriptProcessor.connect(inputCtx.destination);
+
+            // Aria začne konverzaci hned po připojení — nevyčkává na uživatele
+            sessionPromise.then(session => {
+              session.sendClientContent({
+                turns: [{ role: 'user', parts: [{ text: 'Hello' }] }],
+                turnComplete: true,
+              });
+            });
           },
           onmessage: async (msg: LiveServerMessage) => {
             if (connectionId !== activeConnectionIdRef.current) return;
