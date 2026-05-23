@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
+import { GoogleGenAI, LiveServerMessage, Modality, ThinkingLevel } from '@google/genai';
 import { AppSettings, Message } from '../types';
 import { getSystemInstruction, getReadingSystemInstruction, SCENARIOS } from '../constants';
 import { base64ToUint8Array, arrayBufferToBase64, convertFloat32ToInt16, decodeAudioData } from '../utils/audioUtils';
 import { incrementUsage } from '../utils/usageUtils';
 
-// Gemini Live API model — ověřeno na free tieru (v1.3.0)
-const LIVE_MODEL = 'gemini-2.5-flash-native-audio-preview-12-2025';
+// Gemini 3.1 Flash Live — audio-to-audio model pro real-time dialog, free tier
+const LIVE_MODEL = 'gemini-3.1-flash-live-preview';
 
 interface UseLiveAPIReturn {
   connect: () => Promise<void>;
@@ -222,6 +222,11 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
           },
           inputAudioTranscription: {},
           outputAudioTranscription: {},
+          generationConfig: {
+            thinkingConfig: {
+              thinkingLevel: ThinkingLevel.MINIMAL, // Nejnižší latence pro real-time hlas
+            },
+          },
         },
         callbacks: {
           onopen: () => {
@@ -308,36 +313,40 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
             }
 
             // --- Zpracování Audia od modelu ---
-            const audioData = serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
-            if (audioData && audioContextRef.current) {
-              const ctx = audioContextRef.current;
-              const buffer = await decodeAudioData(
-                base64ToUint8Array(audioData),
-                ctx
-              );
+            // Gemini 3.1: jeden event může obsahovat více parts (audio + transcript současně)
+            const parts = serverContent?.modelTurn?.parts || [];
+            for (const part of parts) {
+              const audioData = part?.inlineData?.data;
+              if (audioData && audioContextRef.current) {
+                const ctx = audioContextRef.current;
+                const buffer = await decodeAudioData(
+                  base64ToUint8Array(audioData),
+                  ctx
+                );
 
-              const source = ctx.createBufferSource();
-              source.buffer = buffer;
-              source.connect(ctx.destination);
+                const source = ctx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(ctx.destination);
 
-              // Plánování přehrávání bez mezer (gapless)
-              const currentTime = ctx.currentTime;
-              if (nextStartTimeRef.current < currentTime) {
-                nextStartTimeRef.current = currentTime;
-              }
-
-              source.start(nextStartTimeRef.current);
-              nextStartTimeRef.current += buffer.duration;
-
-              audioSourcesRef.current.add(source);
-              setIsSpeaking(true);
-
-              source.onended = () => {
-                audioSourcesRef.current.delete(source);
-                if (audioSourcesRef.current.size === 0) {
-                  setIsSpeaking(false);
+                // Plánování přehrávání bez mezer (gapless)
+                const currentTime = ctx.currentTime;
+                if (nextStartTimeRef.current < currentTime) {
+                  nextStartTimeRef.current = currentTime;
                 }
-              };
+
+                source.start(nextStartTimeRef.current);
+                nextStartTimeRef.current += buffer.duration;
+
+                audioSourcesRef.current.add(source);
+                setIsSpeaking(true);
+
+                source.onended = () => {
+                  audioSourcesRef.current.delete(source);
+                  if (audioSourcesRef.current.size === 0) {
+                    setIsSpeaking(false);
+                  }
+                };
+              }
             }
 
             // --- Klíčová vlastnost: PŘERUŠENÍ (Interruption) ---

@@ -1,11 +1,22 @@
-export const APP_VERSION = "v1.4.1";
+export const APP_VERSION = "v1.4.2";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.4.2",
+    date: "2026-05-23",
+    title: "Upgrade na Gemini 3.1 Flash Live (SDK v2.6.0)",
+    changes: [
+      "Live model upgradován na gemini-3.1-flash-live-preview — nový audio-to-audio model (real-time dialog, nižší latence, HD hlasy).",
+      "SDK @google/genai upgradován z v1.40 na v2.6.0 — nutné pro podporu nového modelu.",
+      "Přidán thinkingConfig: MINIMAL pro nejnižší latenci v real-time konverzaci.",
+      "Opraveno zpracování audio událostí — nový model posílá více parts v jednom eventu.",
+    ],
+  },
   {
     version: "v1.4.1",
     date: "2026-05-23",
-    title: "Hotfix: Live API model — revert na ověřený model",
+    title: "Hotfix: revert Live modelu (přechodně)",
     changes: [
-      "Live API model vrácen na gemini-2.5-flash-native-audio-preview-12-2025 (gemini-3.1-flash-live-preview neexistuje → connection error).",
+      "Live model dočasně vrácen na gemini-2.5-flash — gemini-3.1 vyžaduje SDK v2+ a thinkingConfig.",
     ],
   },
   {
