@@ -1,5 +1,14 @@
-export const APP_VERSION = "v1.3.0";
+export const APP_VERSION = "v1.4.0";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.4.0",
+    date: "2026-05-23",
+    title: "Model upgrade: Gemini 3.5 Flash + Live 3.1",
+    changes: [
+      "Upgrade legacy chat modelu: gemini-3-flash-preview → gemini-3.5-flash (výrazně lepší kvalita, stejný free tier).",
+      "Upgrade Live API modelu: gemini-2.5-flash-native-audio-preview-12-2025 → gemini-3.1-flash-live-preview (novější, stabilnější).",
+    ],
+  },
   {
     version: "v1.3.0",
     date: "2026-03-07",
@@ -77,7 +86,7 @@ export const RELEASE_HISTORY = [
     ],
   },
 ];
-export const MODEL_NAME = "gemini-3-flash-preview";
+export const MODEL_NAME = "gemini-3.5-flash";
 
 export const PRESET_AVATARS = {
   female: {

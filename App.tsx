@@ -40,6 +40,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
 
   // App State
+  const isInitializingRef = useRef(false);
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings(DEFAULT_SETTINGS));
   const [showLevelSelector, setShowLevelSelector] = useState(() => !localStorage.getItem('aria_app_settings'));
   const [showSettings, setShowSettings] = useState(false);
@@ -265,6 +266,8 @@ function App() {
   }, [liveRuntimeState.isConnected, settings.interactionMode]);
 
   const handleLevelSelect = async (level: EnglishLevel) => {
+    if (isInitializingRef.current) return;
+    isInitializingRef.current = true;
     const newSettings = { ...settings, level };
     setSettings(newSettings);
     saveSettings(newSettings);
@@ -286,12 +289,14 @@ function App() {
     }]);
 
     setIsLoading(false);
+    isInitializingRef.current = false;
   };
 
-  // Auto-init for persisted settings
+  // Auto-init for persisted settings (guard prevents double-init with handleLevelSelect)
   useEffect(() => {
-    if (!showLevelSelector && messages.length === 0) {
+    if (!showLevelSelector && messages.length === 0 && !isInitializingRef.current) {
       const initPersistentSession = async () => {
+        isInitializingRef.current = true;
         setIsLoading(true);
         await initializeChat(settings.level, settings.correctionStrictness, settings.showCzechTranslation, activeScenario);
 
@@ -307,6 +312,7 @@ function App() {
         }]);
         resetSessionTracking();
         setIsLoading(false);
+        isInitializingRef.current = false;
       };
       initPersistentSession();
     }

@@ -6,7 +6,7 @@ import { base64ToUint8Array, arrayBufferToBase64, convertFloat32ToInt16, decodeA
 import { incrementUsage } from '../utils/usageUtils';
 
 // Používáme model podporující nativní audio streamování
-const LIVE_MODEL = 'gemini-2.5-flash-native-audio-preview-12-2025';
+const LIVE_MODEL = 'gemini-3.1-flash-live-preview';
 
 interface UseLiveAPIReturn {
   connect: () => Promise<void>;
