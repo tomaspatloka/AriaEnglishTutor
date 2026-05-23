@@ -260,13 +260,12 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
               const pcmData = convertFloat32ToInt16(inputData);
               const base64 = arrayBufferToBase64(pcmData.buffer as ArrayBuffer);
 
-              // Odeslání do modelu
-              // Důležité: Používáme sessionPromise z uzávěru (closure)
+              // Odeslání do modelu — gemini-3.1 vyžaduje `audio` místo deprecated `media`
               sessionPromise.then(session => {
                 session.sendRealtimeInput({
-                  media: {
-                    mimeType: 'audio/pcm;rate=16000',
-                    data: base64
+                  audio: {
+                    data: base64,
+                    mimeType: 'audio/pcm;rate=16000'
                   }
                 });
               });

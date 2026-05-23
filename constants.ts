@@ -1,5 +1,14 @@
-export const APP_VERSION = "v1.4.3";
+export const APP_VERSION = "v1.4.4";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.4.4",
+    date: "2026-05-23",
+    title: "Fix: oprava Live audio formátu pro Gemini 3.1 (media → audio)",
+    changes: [
+      "ROOT CAUSE FIX: sendRealtimeInput({ media }) → sendRealtimeInput({ audio }) — Gemini 3.1 odmítá deprecated media_chunks formát a okamžitě zavírá session.",
+      "Gemini 2.5 toleroval starý media formát, Gemini 3.1 ho striktně odmítá — breaking change v Live API protokolu.",
+    ],
+  },
   {
     version: "v1.4.3",
     date: "2026-05-23",
