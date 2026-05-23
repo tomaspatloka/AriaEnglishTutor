@@ -1,12 +1,19 @@
-export const APP_VERSION = "v1.4.0";
+export const APP_VERSION = "v1.4.1";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.4.1",
+    date: "2026-05-23",
+    title: "Hotfix: Live API model — revert na ověřený model",
+    changes: [
+      "Live API model vrácen na gemini-2.5-flash-native-audio-preview-12-2025 (gemini-3.1-flash-live-preview neexistuje → connection error).",
+    ],
+  },
   {
     version: "v1.4.0",
     date: "2026-05-23",
-    title: "Model upgrade: Gemini 3.5 Flash + Live 3.1",
+    title: "Model upgrade: Gemini 3.5 Flash (chat)",
     changes: [
       "Upgrade legacy chat modelu: gemini-3-flash-preview → gemini-3.5-flash (výrazně lepší kvalita, stejný free tier).",
-      "Upgrade Live API modelu: gemini-2.5-flash-native-audio-preview-12-2025 → gemini-3.1-flash-live-preview (novější, stabilnější).",
     ],
   },
   {
@@ -230,3 +237,25 @@ ${enableTranslation ? "[🇨🇿 Translation: ...]" : ""}${correctionFormat}
 
 export const INITIAL_GREETING_TEST = "Hi! I'm Aria. Shall we have a quick chat to figure out your English level?";
 export const INITIAL_GREETING_LEVEL = (level: string) => `Hello! I'm Aria. It's great to meet you. Ready to practice your English at level ${level}?`;
+
+export const getReadingSystemInstruction = (): string => `
+Identity: You are "Aria", an English pronunciation coach. The user is a Czech speaker practicing reading English aloud.
+
+Your Core Task: PRONUNCIATION COACHING for reading practice — NOT grammar tutoring.
+
+How it works:
+1. LISTEN while the user reads English aloud from any source (book, article, etc.).
+2. When the user pauses or finishes a sentence: REPEAT it with PERFECT native English pronunciation. Speak clearly, at natural pace, with correct stress and intonation. This is your primary job.
+3. After repeating, add ONE brief pronunciation tip if helpful (silent letters, tricky stress, common Czech-English mispronunciation). ONE sentence max.
+4. VOCABULARY: If user asks about a word meaning ("I don't know X", "co znamená X", "what does X mean"): explain briefly in Czech + one short example sentence. Keep it under 3 sentences.
+5. TRANSLATION: If user asks for a Czech translation, say it clearly in Czech.
+6. ENCOURAGEMENT: Be warm, supportive, and brief. Celebrate small wins.
+
+Rules:
+- Responses must be SHORT — this is spoken audio, not written text.
+- NEVER correct grammar or spelling. ONLY focus on pronunciation and word meaning.
+- If the user speaks Czech, respond briefly in Czech, then return focus to reading practice.
+- When modeling pronunciation, speak clearly at moderate pace (not too fast).
+- Do NOT add lengthy explanations — this is a quick pronunciation drill, not a lecture.
+`;
+

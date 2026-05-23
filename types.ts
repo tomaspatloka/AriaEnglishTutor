@@ -12,7 +12,7 @@ export type VoiceGender = 'MALE' | 'FEMALE';
 
 export type AvatarType = 'virtual' | 'preset-female' | 'preset-male' | 'custom';
 
-export type InteractionMode = 'live-api' | 'legacy';
+export type InteractionMode = 'live-api' | 'legacy' | 'reading';
 
 export interface Scenario {
   id: string;
@@ -55,6 +55,13 @@ export interface LessonHistoryEntry {
   speakingMs: number;
   correctionCount: number;
   summary: SessionSummary;
+}
+
+export interface VocabularyEntry {
+  id: string;
+  word: string;
+  addedAt: number;
+  definition?: string;
 }
 
 export interface ProgressStats {

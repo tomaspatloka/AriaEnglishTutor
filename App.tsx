@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Message, EnglishLevel, AppSettings, Scenario, SessionSummary, LessonHistoryEntry } from './types';
+import { Message, EnglishLevel, AppSettings, InteractionMode, Scenario, SessionSummary, LessonHistoryEntry } from './types';
 import { INITIAL_GREETING_TEST, INITIAL_GREETING_LEVEL, PRESET_AVATARS, APP_VERSION, SCENARIOS } from './constants';
 import ScenarioSelector from './components/ScenarioSelector';
 import { initializeChat, sendMessageToGemini, generateSessionSummary, generateRetrySentence, generatePracticeVariants } from './services/geminiService';
@@ -8,6 +8,7 @@ import InputArea from './components/InputArea';
 import LevelSelector from './components/LevelSelector';
 import SettingsModal from './components/SettingsModal';
 import AvatarView from './components/AvatarView';
+import ReadingModeView from './components/ReadingModeView';
 import ProgressModal from './components/ProgressModal';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useTextToSpeech } from './hooks/useTextToSpeech';
@@ -63,6 +64,7 @@ function App() {
   });
   const [progressNotice, setProgressNotice] = useState<string | null>(null);
 
+  const prevInteractionModeRef = useRef<AppSettings['interactionMode']>(settings.interactionMode);
   const sessionStartedAtRef = useRef<number>(Date.now());
   const speakingMsRef = useRef(0);
   const voiceActiveStartedAtRef = useRef<number | null>(null);
@@ -176,6 +178,15 @@ function App() {
     voiceActiveStartedAtRef.current = null;
     setLatestSummary(null);
     setProgressNotice(null);
+  };
+
+  const enterReadingMode = () => {
+    prevInteractionModeRef.current = settings.interactionMode as InteractionMode;
+    setSettings(prev => ({ ...prev, interactionMode: 'reading' }));
+  };
+
+  const exitReadingMode = () => {
+    setSettings(prev => ({ ...prev, interactionMode: prevInteractionModeRef.current }));
   };
 
   const getCurrentSpeakingMs = () => {
@@ -715,6 +726,14 @@ Return to normal English tutor behavior in your next response.`;
           </button>
 
           <button
+            onClick={settings.interactionMode === 'reading' ? exitReadingMode : enterReadingMode}
+            className={`p-2 rounded-full transition-all active:scale-95 ${settings.interactionMode === 'reading' ? 'bg-blue-400/30 ring-2 ring-blue-400/50' : 'bg-white/10 hover:bg-white/20'}`}
+            title="Reading Mode"
+          >
+            <span className="text-lg leading-none">📚</span>
+          </button>
+
+          <button
             onClick={() => setShowSettings(true)}
             className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all active:scale-95"
           >
@@ -757,9 +776,14 @@ Return to normal English tutor behavior in your next response.`;
       )}
 
       {/* Main Content Area - Swaps based on mode */}
-      <main className={`flex-1 overflow-y-auto no-scrollbar ${settings.showAvatarMode ? 'pb-0' : 'p-4 sm:p-6 pb-24'}`}>
+      <main className={`flex-1 overflow-y-auto no-scrollbar ${settings.interactionMode === 'reading' || settings.showAvatarMode ? 'pb-0' : 'p-4 sm:p-6 pb-24'}`}>
 
-        {settings.showAvatarMode ? (
+        {settings.interactionMode === 'reading' ? (
+          <ReadingModeView
+            settings={settings}
+            onExit={exitReadingMode}
+          />
+        ) : settings.showAvatarMode ? (
           <AvatarView
             restartToken={restartToken}
             latestMessage={messages[messages.length - 1] || null}

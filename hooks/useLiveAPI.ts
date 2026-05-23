@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { AppSettings, Message } from '../types';
-import { getSystemInstruction, SCENARIOS } from '../constants';
+import { getSystemInstruction, getReadingSystemInstruction, SCENARIOS } from '../constants';
 import { base64ToUint8Array, arrayBufferToBase64, convertFloat32ToInt16, decodeAudioData } from '../utils/audioUtils';
 import { incrementUsage } from '../utils/usageUtils';
 
-// Používáme model podporující nativní audio streamování
-const LIVE_MODEL = 'gemini-3.1-flash-live-preview';
+// Gemini Live API model — ověřeno na free tieru (v1.3.0)
+const LIVE_MODEL = 'gemini-2.5-flash-native-audio-preview-12-2025';
 
 interface UseLiveAPIReturn {
   connect: () => Promise<void>;
@@ -216,7 +216,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
         model: LIVE_MODEL,
         config: {
           responseModalities: [Modality.AUDIO], // Chceme primárně audio
-          systemInstruction: { parts: [{ text: getSystemInstruction(settings.level, settings.correctionStrictness, settings.showCzechTranslation, settings.activeScenario ? SCENARIOS.find(s => s.id === settings.activeScenario) : null) }] },
+          systemInstruction: { parts: [{ text: settings.interactionMode === 'reading' ? getReadingSystemInstruction() : getSystemInstruction(settings.level, settings.correctionStrictness, settings.showCzechTranslation, settings.activeScenario ? SCENARIOS.find(s => s.id === settings.activeScenario) : null) }] },
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } },
           },
