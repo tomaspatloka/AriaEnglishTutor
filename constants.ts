@@ -1,5 +1,15 @@
-export const APP_VERSION = "v1.4.2";
+export const APP_VERSION = "v1.4.3";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.4.3",
+    date: "2026-05-23",
+    title: "Hotfix: oprava Live session crash (thinkingConfig + sendClientContent)",
+    changes: [
+      "Odstraněn thinkingConfig z live.connect config — Live API ho nepodporuje, způsoboval okamžité zavření session.",
+      "Nahrazen sendClientContent('Hello') za sendRealtimeInput({ text: 'Hello' }) — správný způsob zahájení konverzace v Gemini 3.1 Live protokolu.",
+      "Odstraněn zbytečný import ThinkingLevel.",
+    ],
+  },
   {
     version: "v1.4.2",
     date: "2026-05-23",
@@ -7,7 +17,6 @@ export const RELEASE_HISTORY = [
     changes: [
       "Live model upgradován na gemini-3.1-flash-live-preview — nový audio-to-audio model (real-time dialog, nižší latence, HD hlasy).",
       "SDK @google/genai upgradován z v1.40 na v2.6.0 — nutné pro podporu nového modelu.",
-      "Přidán thinkingConfig: MINIMAL pro nejnižší latenci v real-time konverzaci.",
       "Opraveno zpracování audio událostí — nový model posílá více parts v jednom eventu.",
     ],
   },

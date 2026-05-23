@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { GoogleGenAI, LiveServerMessage, Modality, ThinkingLevel } from '@google/genai';
+import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { AppSettings, Message } from '../types';
 import { getSystemInstruction, getReadingSystemInstruction, SCENARIOS } from '../constants';
 import { base64ToUint8Array, arrayBufferToBase64, convertFloat32ToInt16, decodeAudioData } from '../utils/audioUtils';
@@ -222,11 +222,6 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
           },
           inputAudioTranscription: {},
           outputAudioTranscription: {},
-          generationConfig: {
-            thinkingConfig: {
-              thinkingLevel: ThinkingLevel.MINIMAL, // Nejnižší latence pro real-time hlas
-            },
-          },
         },
         callbacks: {
           onopen: () => {
@@ -280,12 +275,9 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
             source.connect(scriptProcessor);
             scriptProcessor.connect(inputCtx.destination);
 
-            // Aria začne konverzaci hned po připojení — nevyčkává na uživatele
+            // Aria začne konverzaci — posíláme text přes realtimeInput (Gemini 3.1 Live protokol)
             sessionPromise.then(session => {
-              session.sendClientContent({
-                turns: [{ role: 'user', parts: [{ text: 'Hello' }] }],
-                turnComplete: true,
-              });
+              session.sendRealtimeInput({ text: 'Hello' });
             });
           },
           onmessage: async (msg: LiveServerMessage) => {
