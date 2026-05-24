@@ -126,7 +126,7 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit }) =
       </div>
 
       {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3 shrink-0 z-10 relative">
+      <div className="flex items-center justify-between px-4 py-3 shrink-0 z-30 relative">
         <div className="flex items-center gap-2">
           <span className="text-xl">📚</span>
           <div>
