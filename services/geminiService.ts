@@ -42,6 +42,17 @@ export const resetChat = () => {
   chatSession = null;
 };
 
+export const translateWord = async (word: string): Promise<string> => {
+  try {
+    const response = await oneShotUtility(
+      `Translate this English word to Czech. Return ONLY the Czech translation (1-3 words, no explanation, no quotes): "${word}"`
+    );
+    return response.trim().replace(/^["']|["']$/g, '');
+  } catch {
+    return '';
+  }
+};
+
 const oneShotUtility = async (prompt: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const utilityChat = ai.chats.create({

@@ -11,18 +11,21 @@ const LIVE_MODEL = 'gemini-3.1-flash-live-preview';
 interface UseLiveAPIReturn {
   connect: () => Promise<void>;
   disconnect: () => void;
+  pause: () => void;
+  resume: () => void;
+  isPaused: boolean;
   isConnected: boolean;
   isConnecting: boolean;
   isSpeaking: boolean;
   networkSlow: boolean;
-  volumeLevel: number; // Pro vizualizaci hlasitosti
+  volumeLevel: number;
   error: string | null;
-  outputTranscript: string; // Real-time transcript of Aria's speech
-  inputTranscript: string; // Real-time transcript of user's speech
+  outputTranscript: string;
+  inputTranscript: string;
   conversationLog: Message[];
 }
 
-export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
+export const useLiveAPI = (settings: AppSettings, correctionLang: 'cs' | 'en' = 'cs'): UseLiveAPIReturn => {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -39,6 +42,9 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const inputSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+
+  const isPausedRef = useRef(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   // Refs pro správu session
   const sessionPromiseRef = useRef<Promise<any> | null>(null);
@@ -164,6 +170,8 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
     setOutputTranscript('');
     setInputTranscript('');
     nextStartTimeRef.current = 0;
+    isPausedRef.current = false;
+    setIsPaused(false);
   }, []);
 
   const connect = useCallback(async () => {
@@ -216,7 +224,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
         model: LIVE_MODEL,
         config: {
           responseModalities: [Modality.AUDIO], // Chceme primárně audio
-          systemInstruction: { parts: [{ text: settings.interactionMode === 'reading' ? getReadingSystemInstruction() : getSystemInstruction(settings.level, settings.correctionStrictness, settings.showCzechTranslation, settings.activeScenario ? SCENARIOS.find(s => s.id === settings.activeScenario) : null) }] },
+          systemInstruction: { parts: [{ text: settings.interactionMode === 'reading' ? getReadingSystemInstruction(correctionLang) : getSystemInstruction(settings.level, settings.correctionStrictness, settings.showCzechTranslation, settings.activeScenario ? SCENARIOS.find(s => s.id === settings.activeScenario) : null) }] },
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } },
           },
@@ -246,6 +254,10 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
             processorRef.current = scriptProcessor;
 
             scriptProcessor.onaudioprocess = (e) => {
+              if (isPausedRef.current) {
+                setVolumeLevel(0);
+                return;
+              }
               const inputData = e.inputBuffer.getChannelData(0);
 
               // Vizualizace hlasitosti (jednoduchý RMS)
@@ -398,7 +410,7 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
       setError(mapLiveError(e));
       setIsConnected(false);
     }
-  }, [appendConversationChunk, cleanup, isConnected, mapLiveError, settings]);
+  }, [appendConversationChunk, cleanup, correctionLang, isConnected, mapLiveError, settings]);
 
   // Cleanup on unmount — release MediaStream and AudioContext if component disappears
   useEffect(() => {
@@ -429,9 +441,23 @@ export const useLiveAPI = (settings: AppSettings): UseLiveAPIReturn => {
     cleanup();
   }, [cleanup]);
 
+  const pause = useCallback(() => {
+    isPausedRef.current = true;
+    setIsPaused(true);
+    setVolumeLevel(0);
+  }, []);
+
+  const resume = useCallback(() => {
+    isPausedRef.current = false;
+    setIsPaused(false);
+  }, []);
+
   return {
     connect,
     disconnect,
+    pause,
+    resume,
+    isPaused,
     isConnected,
     isConnecting,
     isSpeaking,

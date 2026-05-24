@@ -50,6 +50,26 @@ export const clearVocabulary = (): void => {
   localStorage.removeItem(VOCAB_KEY);
 };
 
+export const addVocabularyWordWithDefinition = async (
+  word: string,
+  getDefinition: () => Promise<string>,
+  onUpdate: (entries: VocabularyEntry[]) => void
+): Promise<void> => {
+  const afterAdd = addVocabularyWord(word);
+  onUpdate(afterAdd);
+  try {
+    const definition = await getDefinition();
+    if (!definition) return;
+    const withDef = loadVocabulary().map(e =>
+      e.word.toLowerCase() === word.toLowerCase() ? { ...e, definition } : e
+    );
+    saveVocabulary(withDef);
+    onUpdate(withDef);
+  } catch {
+    // word stays in vocab without definition
+  }
+};
+
 export const extractVocabFromTranscript = (transcript: string): string[] => {
   const words: string[] = [];
   for (const pattern of VOCAB_PATTERNS) {
