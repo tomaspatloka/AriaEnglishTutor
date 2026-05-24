@@ -38,20 +38,19 @@ export const useTextToSpeech = (settings: AppSettings) => {
     // Fallback to any English if exact region not found
     const englishVoices = accentVoices.length > 0 ? accentVoices : availableVoices.filter(v => v.lang.includes('en'));
 
-    // 2. Filter by Gender (Best Effort - Browser voices don't standardly expose gender)
-    // We look for keywords in the voice name.
-    let bestMatch: SpeechSynthesisVoice | undefined;
+    // 2. Filter by Gender — cross-platform keyword heuristic (no standard gender API in Web Speech)
+    // Word-boundary regex prevents 'man' matching 'woman', 'male' matching 'female'
+    // Keywords cover Windows (Zira/David/Mark), macOS voices, Android (Google voices)
+    const femaleKeywords = ['female', 'woman', 'zira', 'hazel', 'susan', 'karen', 'moira', 'samantha', 'fiona', 'victoria'];
+    const maleKeywords = ['male', 'man', 'david', 'james', 'mark', 'richard', 'george', 'oliver', 'rishi', 'daniel'];
+    const keywords = settings.voiceGender === 'FEMALE' ? femaleKeywords : maleKeywords;
 
-    if (settings.voiceGender === 'FEMALE') {
-      bestMatch = englishVoices.find(v => v.name.toLowerCase().includes('female') || v.name.includes('Samantha') || v.name.includes('Google US English'));
-    } else {
-      bestMatch = englishVoices.find(v => v.name.toLowerCase().includes('male') || v.name.includes('Daniel') || v.name.includes('Google UK English Male'));
-    }
+    const bestMatch = englishVoices.find(v =>
+      keywords.some(kw => new RegExp(`\\b${kw}\\b`, 'i').test(v.name))
+    );
 
-    // 3. Fallback to first available English voice if no gender match found
+    // 3. Fallback to first available language-matched voice, then any English voice
     selectedVoiceRef.current = bestMatch || englishVoices[0] || availableVoices[0];
-
-    console.log(`Selected Voice: ${selectedVoiceRef.current?.name} (${selectedVoiceRef.current?.lang})`);
 
   }, [availableVoices, settings.voiceAccent, settings.voiceGender]);
 

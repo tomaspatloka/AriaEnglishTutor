@@ -344,7 +344,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
              )}
              {/* Czech Translation — smaller, distinct color, separated */}
              {czechTranslation && (
-               <p className="text-sm sm:text-base font-medium leading-snug text-emerald-300/90 drop-shadow-md line-clamp-3 border-t border-white/10 pt-1.5 mt-0.5 w-full italic">
+               <p className="text-sm sm:text-base font-medium leading-snug text-emerald-300/90 drop-shadow-md border-t border-white/10 pt-1.5 mt-0.5 w-full italic">
                  {czechTranslation}
                </p>
              )}
