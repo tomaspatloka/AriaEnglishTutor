@@ -122,7 +122,7 @@ const ProgressModal: React.FC<ProgressModalProps> = ({
                 <div key={item.id} className="rounded-2xl border border-gray-100 p-3 bg-white flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-black text-gray-800">
-                      {new Date(item.endedAt).toLocaleString()} - {item.mode === 'live-api' ? 'Live' : 'Standard'}
+                      {new Date(item.endedAt).toLocaleString()} - {item.mode === 'live-api' ? 'Live' : item.mode === 'reading' ? '📖 Reading' : 'Standard'}
                     </p>
                     <p className="text-[11px] text-gray-500">
                       Delka: {formatMinutes(item.durationMs)} - Mluveni: {formatMinutes(item.speakingMs)} - Opravy: {item.correctionCount}

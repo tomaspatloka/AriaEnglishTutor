@@ -36,12 +36,20 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
   const handlePrint = () => {
     const win = window.open('', '_blank');
     if (!win) return;
+    // Escape user-controlled fields before document.write — slovo i definice mohou pocházet
+    // z ruční editace; bez escapování jde o XSS (audit P1).
+    const escapeHtml = (s: string) =>
+      s.replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     const rows = vocabList.map((e, i) => `
       <tr>
         <td>${i + 1}</td>
-        <td><strong>${e.word}</strong></td>
+        <td><strong>${escapeHtml(e.word)}</strong></td>
         <td>${new Date(e.addedAt).toLocaleDateString('cs-CZ')}</td>
-        <td>${e.definition || ''}</td>
+        <td>${escapeHtml(e.definition || '')}</td>
       </tr>`).join('');
     win.document.write(`<!DOCTYPE html><html><head><title>Aria — Slovníček</title>
 <style>

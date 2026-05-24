@@ -190,8 +190,45 @@ function App() {
     setSettings(prev => ({ ...prev, interactionMode: 'reading' }));
   };
 
-  const exitReadingMode = () => {
+  const exitReadingMode = (session?: { messages: Message[]; startedAt: number }) => {
+    // Obnov předchozí mód synchronně, ať UX nezdrží čekání na summary.
     setSettings(prev => ({ ...prev, interactionMode: prevInteractionModeRef.current }));
+    // Progress zápis jen když student reálně mluvil (audit P1: napojit Reading na historii).
+    // Array.isArray guard: exitReadingMode jde i z header tlačítka, které předá MouseEvent.
+    if (session && Array.isArray(session.messages)
+        && session.messages.some(m => m.role === 'user' && m.text.trim().length > 0)) {
+      finalizeReadingSession(session);
+    }
+  };
+
+  const finalizeReadingSession = async (session: { messages: Message[]; startedAt: number }) => {
+    if (isSummarizingRef.current) return;
+    isSummarizingRef.current = true;
+    setIsSummarizing(true);
+    try {
+      const summary = await generateSessionSummary(session.messages);
+      setLatestSummary(summary);
+      const endedAt = Date.now();
+      const durationMs = Math.max(0, endedAt - session.startedAt);
+      const entry: LessonHistoryEntry = {
+        id: generateId(),
+        endedAt,
+        mode: 'reading',
+        durationMs,
+        // Čtení nahlas JE mluvení → celá délka session se počítá jako praktický čas
+        // (reading mód neměří voice-active ms zvlášť; přesné WPM/scoring je v1.8).
+        speakingMs: durationMs,
+        correctionCount: getCorrectionCount(session.messages),
+        summary,
+      };
+      setLessonHistory(appendLessonHistory(entry));
+      setShowProgress(true);
+    } catch (error) {
+      console.error('Failed to summarize reading session', error);
+    } finally {
+      isSummarizingRef.current = false;
+      setIsSummarizing(false);
+    }
   };
 
   const getCurrentSpeakingMs = () => {
@@ -774,7 +811,7 @@ Return to normal English tutor behavior in your next response.`;
           </button>
 
           <button
-            onClick={settings.interactionMode === 'reading' ? exitReadingMode : enterReadingMode}
+            onClick={() => settings.interactionMode === 'reading' ? exitReadingMode() : enterReadingMode()}
             className={`p-2 rounded-full transition-all active:scale-95 ${settings.interactionMode === 'reading' ? 'bg-blue-400/30 ring-2 ring-blue-400/50' : 'bg-white/10 hover:bg-white/20'}`}
             title="Reading Mode"
           >

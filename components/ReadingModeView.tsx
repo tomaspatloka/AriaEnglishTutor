@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AppSettings, VocabularyEntry } from '../types';
+import { AppSettings, VocabularyEntry, Message } from '../types';
 import { useLiveAPI } from '../hooks/useLiveAPI';
 import { addVocabularyWordWithDefinition, extractVocabFromTranscript } from '../utils/vocabularyUtils';
 import { translateWord } from '../services/geminiService';
 
 interface ReadingModeViewProps {
   settings: AppSettings;
-  onExit: () => void;
+  onExit: (session?: { messages: Message[]; startedAt: number }) => void;
   vocabList: VocabularyEntry[];
   onVocabChange: (entries: VocabularyEntry[]) => void;
   onOpenVocabModal: () => void;
@@ -38,6 +38,15 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
 
   const processedInputLengthRef = useRef(0);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
+  // Začátek čtecí session — pro progress zápis (audit P1). Set při prvním connectu.
+  const readingStartedAtRef = useRef<number>(0);
+
+  // Zaznamenej start session jakmile se Live spojení poprvé naváže
+  useEffect(() => {
+    if (isConnected && readingStartedAtRef.current === 0) {
+      readingStartedAtRef.current = Date.now();
+    }
+  }, [isConnected]);
 
   // Close menu on outside click or Escape — only attach listeners while open
   useEffect(() => {
@@ -97,7 +106,11 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
 
   const handleExit = () => {
     if (isConnected || isConnecting) disconnect();
-    onExit();
+    // Předej čtecí log + čas startu nahoru, ať App vytvoří progress zápis (mode='reading').
+    const session = conversationLog.length > 0 && readingStartedAtRef.current > 0
+      ? { messages: conversationLog, startedAt: readingStartedAtRef.current }
+      : undefined;
+    onExit(session);
   };
 
   const isUserTalking = isConnected && !isSpeaking && !isPaused && volumeLevel > 0.03;
