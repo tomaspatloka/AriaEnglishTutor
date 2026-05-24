@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Message, EnglishLevel, AppSettings, InteractionMode, Scenario, SessionSummary, LessonHistoryEntry } from './types';
+import { Message, EnglishLevel, AppSettings, InteractionMode, Scenario, SessionSummary, LessonHistoryEntry, VocabularyEntry } from './types';
 import { INITIAL_GREETING_TEST, INITIAL_GREETING_LEVEL, PRESET_AVATARS, APP_VERSION, SCENARIOS } from './constants';
 import ScenarioSelector from './components/ScenarioSelector';
-import { initializeChat, sendMessageToGemini, generateSessionSummary, generateRetrySentence, generatePracticeVariants } from './services/geminiService';
+import { initializeChat, sendMessageToGemini, generateSessionSummary, generateRetrySentence, generatePracticeVariants, translateWord } from './services/geminiService';
 import MessageBubble from './components/MessageBubble';
 import InputArea from './components/InputArea';
 import LevelSelector from './components/LevelSelector';
@@ -10,6 +10,8 @@ import SettingsModal from './components/SettingsModal';
 import AvatarView from './components/AvatarView';
 import ReadingModeView from './components/ReadingModeView';
 import ProgressModal from './components/ProgressModal';
+import VocabularyModal from './components/VocabularyModal';
+import { loadVocabulary, extractVocabFromTranscript, addVocabularyWordWithDefinition } from './utils/vocabularyUtils';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useTextToSpeech } from './hooks/useTextToSpeech';
 import { getUsageStats } from './utils/usageUtils';
@@ -54,6 +56,8 @@ function App() {
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [latestSummary, setLatestSummary] = useState<SessionSummary | null>(null);
   const [lessonHistory, setLessonHistory] = useState<LessonHistoryEntry[]>(() => loadLessonHistory());
+  const [vocabList, setVocabList] = useState<VocabularyEntry[]>(() => loadVocabulary());
+  const [showVocabModal, setShowVocabModal] = useState(false);
   const [liveRuntimeState, setLiveRuntimeState] = useState({
     isConnected: false,
     isConnecting: false,
@@ -70,6 +74,7 @@ function App() {
   const voiceActiveStartedAtRef = useRef<number | null>(null);
   const prevLiveConnectedRef = useRef(false);
   const isSummarizingRef = useRef(false);
+  const processedLiveMsgCountRef = useRef(0);
 
   // PWA Install Prompt
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -275,6 +280,24 @@ function App() {
 
     prevLiveConnectedRef.current = isNowConnected;
   }, [liveRuntimeState.isConnected, settings.interactionMode]);
+
+  // Extract vocabulary from Live API conversation (user messages only)
+  useEffect(() => {
+    const msgs = liveRuntimeState.conversationMessages;
+    if (msgs.length < processedLiveMsgCountRef.current) {
+      processedLiveMsgCountRef.current = 0; // session reset
+    }
+    const newMsgs = msgs.slice(processedLiveMsgCountRef.current);
+    processedLiveMsgCountRef.current = msgs.length;
+    if (newMsgs.length === 0) return;
+    for (const msg of newMsgs) {
+      if (msg.role !== 'user') continue;
+      const detected = extractVocabFromTranscript(msg.text);
+      for (const word of detected) {
+        addVocabularyWordWithDefinition(word, () => translateWord(word), setVocabList);
+      }
+    }
+  }, [liveRuntimeState.conversationMessages]);
 
   const handleLevelSelect = async (level: EnglishLevel) => {
     if (isInitializingRef.current) return;
@@ -500,6 +523,11 @@ Return to normal English tutor behavior in your next response.`;
     setMessages(prev => [...prev, newMessage]);
     setIsLoading(true);
 
+    const detectedVocab = extractVocabFromTranscript(userText);
+    for (const word of detectedVocab) {
+      addVocabularyWordWithDefinition(word, () => translateWord(word), setVocabList);
+    }
+
     try {
       const responseText = await sendMessageToGemini(userText);
 
@@ -652,6 +680,13 @@ Return to normal English tutor behavior in your next response.`;
         notice={progressNotice}
       />
 
+      <VocabularyModal
+        isOpen={showVocabModal}
+        onClose={() => setShowVocabModal(false)}
+        vocabList={vocabList}
+        onVocabChange={setVocabList}
+      />
+
       <ScenarioSelector
         isOpen={showScenarios}
         onClose={() => setShowScenarios(false)}
@@ -713,6 +748,19 @@ Return to normal English tutor behavior in your next response.`;
             title="Scenarios"
           >
             <span className="text-lg leading-none">{activeScenario ? activeScenario.icon : '🎭'}</span>
+          </button>
+
+          <button
+            onClick={() => setShowVocabModal(true)}
+            className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all active:scale-95 relative"
+            title="Slovníček"
+          >
+            <span className="text-lg leading-none">📖</span>
+            {vocabList.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-400 rounded-full text-[9px] font-black text-white flex items-center justify-center">
+                {vocabList.length > 9 ? '9+' : vocabList.length}
+              </span>
+            )}
           </button>
 
           <button
@@ -782,6 +830,9 @@ Return to normal English tutor behavior in your next response.`;
           <ReadingModeView
             settings={settings}
             onExit={exitReadingMode}
+            vocabList={vocabList}
+            onVocabChange={setVocabList}
+            onOpenVocabModal={() => setShowVocabModal(true)}
           />
         ) : settings.showAvatarMode ? (
           <AvatarView

@@ -1,16 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AppSettings, VocabularyEntry } from '../types';
 import { useLiveAPI } from '../hooks/useLiveAPI';
-import VocabularyModal from './VocabularyModal';
-import { addVocabularyWordWithDefinition, extractVocabFromTranscript, loadVocabulary } from '../utils/vocabularyUtils';
+import { addVocabularyWordWithDefinition, extractVocabFromTranscript } from '../utils/vocabularyUtils';
 import { translateWord } from '../services/geminiService';
 
 interface ReadingModeViewProps {
   settings: AppSettings;
   onExit: () => void;
+  vocabList: VocabularyEntry[];
+  onVocabChange: (entries: VocabularyEntry[]) => void;
+  onOpenVocabModal: () => void;
 }
 
-const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit }) => {
+const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, vocabList, onVocabChange, onOpenVocabModal }) => {
   // F1 — Settings menu state
   const [showMenu, setShowMenu] = useState(false);
   const [showTranscript, setShowTranscript] = useState(true);
@@ -34,8 +36,6 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit }) =
     conversationLog,
   } = useLiveAPI(settings, correctionLanguage);
 
-  const [vocabList, setVocabList] = useState<VocabularyEntry[]>(() => loadVocabulary());
-  const [showVocabModal, setShowVocabModal] = useState(false);
   const processedInputLengthRef = useRef(0);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
@@ -74,7 +74,7 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit }) =
       addVocabularyWordWithDefinition(
         word,
         () => translateWord(word),
-        setVocabList
+        onVocabChange
       );
     }
   }, [inputTranscript]);
@@ -365,7 +365,7 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit }) =
               {vocabList.slice(0, 5).map(entry => (
                 <button
                   key={entry.id}
-                  onClick={() => setShowVocabModal(true)}
+                  onClick={() => onOpenVocabModal()}
                   title={entry.definition ? `${entry.word} · ${entry.definition}` : entry.word}
                   className="shrink-0 flex items-center gap-1 max-w-[180px] bg-blue-500/15 text-blue-300 border border-blue-400/25 rounded-full px-3 py-0.5 text-xs font-semibold hover:bg-blue-500/25 transition active:scale-95"
                 >
@@ -388,7 +388,7 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit }) =
             Slovníček
           </p>
           <button
-            onClick={() => setShowVocabModal(true)}
+            onClick={() => onOpenVocabModal()}
             className="flex items-center gap-1.5 px-3 py-1 bg-blue-500/15 text-blue-300 text-xs font-bold rounded-full border border-blue-400/25 hover:bg-blue-500/25 transition active:scale-95"
           >
             📚 {vocabList.length} {vocabList.length === 1 ? 'slovo' : vocabList.length < 5 ? 'slova' : 'slov'} →
@@ -396,12 +396,6 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit }) =
         </div>
       </div>
 
-      <VocabularyModal
-        isOpen={showVocabModal}
-        onClose={() => setShowVocabModal(false)}
-        vocabList={vocabList}
-        onVocabChange={setVocabList}
-      />
     </div>
   );
 };

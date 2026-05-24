@@ -130,7 +130,7 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
               </div>
               <button
                 onClick={() => handleRemove(entry.id)}
-                className="p-1.5 text-slate-700 hover:text-red-400 transition shrink-0 opacity-0 group-hover:opacity-100"
+                className="p-1.5 text-slate-700 hover:text-red-400 transition shrink-0 sm:opacity-0 sm:group-hover:opacity-100"
                 title="Smazat"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
