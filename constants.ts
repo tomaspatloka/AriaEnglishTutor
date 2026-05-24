@@ -1,5 +1,18 @@
-export const APP_VERSION = "v1.4.4";
+export const APP_VERSION = "v1.5.0";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.5.0",
+    date: "2026-05-24",
+    title: "Reading Mode: ⋯ menu, pauza, slovníček s CZ překlady, redesign baru",
+    changes: [
+      "Nové ⋯ settings menu v Reading Mode — přepínač zobrazení přepisu konverzace a jazyk oprav Arie (čeština/angličtina).",
+      "Pauza tlačítko — pozastaví mikrofon bez odpojení Gemini Live session (isPausedRef flag).",
+      "Automatické přidávání neznámých slov do slovníčku s českým překladem (řekni 'I don't know X').",
+      "Redesign spodního slovníčkového baru — 2 řádky, pills se slovy + CZ definicí, bez vstupního pole.",
+      "Fix: TTS výběr hlasu — word-boundary regex místo hardcoded názvů (Windows Zira/David, macOS, Android).",
+      "Fix: Czech překlad v AvatarView — odstraněn line-clamp-3, překlad se zobrazí celý.",
+    ],
+  },
   {
     version: "v1.4.4",
     date: "2026-05-23",
