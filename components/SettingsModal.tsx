@@ -127,7 +127,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentS
             </div>
             <p className="text-[10px] text-indigo-400 mt-2 text-center px-2">
               {settings.interactionMode === 'live-api'
-                ? "🚀 Gemini 2.5 Flash Native Audio: Okamžitá reakce, skákání do řeči, přirozenější hlas."
+                ? "🚀 Gemini 3.1 Flash Live: Okamžitá reakce, skákání do řeči, přirozenější hlas."
                 : "🐢 Legacy Mode: Starší způsob (Nahrát -> Přepsat -> Odeslat -> Přečíst). Pomalejší, ale stabilní."}
             </p>
           </section>
@@ -311,7 +311,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentS
 
             <div className="space-y-4 text-sm relative z-10">
               <p className="text-slate-300 leading-relaxed">
-                Aria je váš osobní AI lektor angličtiny, který využívá nejmodernější model <span className="text-emerald-400 font-bold">Gemini 2.5 Flash</span> pro přirozenou konverzaci a okamžitou zpětnou vazbu.
+                Aria je váš osobní AI lektor angličtiny, který využívá nejmodernější modely <span className="text-emerald-400 font-bold">Gemini 3.5 Flash</span> a <span className="text-emerald-400 font-bold">Gemini 3.1 Flash Live</span> pro přirozenou konverzaci a okamžitou zpětnou vazbu.
               </p>
 
               <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-800">
