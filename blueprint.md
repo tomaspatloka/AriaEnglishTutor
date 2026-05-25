@@ -1,84 +1,135 @@
-# Aria English Tutor — Blueprint
+# Aria English Tutor — Blueprint budoucího vývoje
 
-## 1. Přehled
-- **Verze:** 1.3.0 (package.json: 1.2.0, constants.ts: v1.3.0)
-- **Typ:** Web App (PWA-ready)
-- **Stack:** React 19 + TypeScript + Vite 6, Gemini AI (@google/genai)
-- **Deployment:** Lokální dev (Vite), produkční build do `dist/`
-- **Datum auditu:** 2026-03-15
+**Aktualizováno:** 2026-05-23 (vychází z v1.4.4)
 
-## 2. Architektura
-Monolitická React SPA s jedním hlavním souborem `App.tsx` (844 řádků). Kód je rozdělen do logických složek:
+---
 
-- **Entry point:** `index.tsx` -> `App.tsx`
-- **Komponenty:** `components/` — 8 komponent (AvatarView, InputArea, LevelSelector, MessageBubble, ProgressModal, ScenarioSelector, SettingsModal, VirtualAvatar)
-- **Hooky:** `hooks/` — useLiveAPI, useSpeechRecognition, useTextToSpeech
-- **Služby:** `services/geminiService.ts` — Gemini AI chat, session summary, retry, practice variants
-- **Utility:** `utils/` — audioUtils, sessionHistoryUtils, settingsUtils, usageUtils
-- **Typy:** `types.ts` — 67 řádků, čisté TypeScript interfaces
-- **Konfigurace:** `constants.ts` — scénáře, system prompt, verze, avatary
+## PRIORITA 1 — Základní bezpečnost a stabilita
 
-## 3. Funkce
-- AI konverzace s Gemini (chat + Live audio streaming)
-- 14 role-play scénářů (nakupování, restaurace, letiště, lékař, pohovor...)
-- CEFR level assessment (A1-C2 + TEST_ME auto-detect)
-- Nastavitelná strictness korekce (1-10 škála, 5 úrovní chování)
-- Text-to-Speech (Web Speech API, US/UK accent, male/female)
-- Speech-to-Text (Web Speech Recognition API)
-- Avatar mód (preset Sarah/Tom + custom upload + virtual)
-- Session summary po konverzaci (strengths, errors, practice sentences)
-- Lesson history + progress tracking (streak, trend, speaking time)
-- One-tap korekce (Retry corrected, Practice 3 variants)
-- API usage donut chart s denním limitem
-- PWA install banner
-- Dark/light theme (Tailwind)
-- Český překlad na vyžádání (toggle v nastavení)
+### B1 — Backend proxy pro API klíč
+**Proč:** API klíč je součástí buildu — kdokoliv ho může vytáhnout z DevTools.  
+**Co:** Cloudflare Worker nebo Pages Function jako proxy. Klient volá `/api/chat`, worker přidá klíč a přepošle na Google.  
+**Dopad:** Aplikaci lze bezpečně sdílet s kýmkoliv.
 
-## 4. Datové úložiště
-- **localStorage:** Nastavení (`aria_app_settings`), lesson history, usage stats, PWA dismissed flag
-- **API:** Gemini AI (Google GenAI SDK) — API klíč v `.env.local` (process.env.API_KEY)
-- **Žádná serverová DB** — vše client-side
+### B2 — Ephemeral token pro Live API
+**Proč:** Google doporučuje pro klientský Live API přístup krátkodobé tokeny místo přímého klíče.  
+**Co:** Server (Cloudflare Worker) vygeneruje ephemeral token přes Google Token Exchange API, klient ho použije pro `ai.live.connect()`.  
+**Závisí na:** B1
 
-## 5. Závislosti
-| Knihovna | Verze | Účel |
-|---|---|---|
-| react | ^19.2.4 | UI framework |
-| react-dom | ^19.2.4 | DOM rendering |
-| @google/genai | ^1.40.0 | Gemini AI SDK |
-| uuid | ^13.0.0 | Generování ID |
-| vite | ^6.2.0 | Build tool |
-| typescript | ~5.8.2 | Type system |
-| @vitejs/plugin-react | ^5.0.0 | React HMR |
+### B3 — Automatický fallback modelu
+**Proč:** Google deprecuje modely bez varování (stalo se s `gemini-2.0-flash-live-001`).  
+**Co:** Pokud se `gemini-3.1-flash-live-preview` nepřipojí → automaticky zkusí `gemini-2.5-flash-native-audio-preview`. Indikátor v UI: "Připojeno na [model]".
 
-## 6. Aktuální stav
-**Celkové hodnocení: 8/10 — Funkční, feature-rich aplikace s kvalitním UX**
+---
 
-Co funguje dobře:
-- AI konverzace (Legacy i Live mód)
-- Role-play scénáře (14 situací)
-- Session summary a progress tracking
-- Responzivní design, prémiový vzhled
-- Audio pipeline (TTS + STT)
+## PRIORITA 2 — Nové výukové funkce
 
-Známé problémy (z audit.md):
-- App.tsx je monolitický (844 řádků)
-- ScriptProcessorNode je deprecated (Live API audio)
-- API klíč je ve frontendu (bezpečnostní riziko pro produkci)
-- TTS voice selection je nespolehlivé napříč OS
-- Žádné testy
+### B4 — Vocabulary flashcards (spaced repetition)
+**Proč:** Aktuální slovníček v Reading Mode je jen pasivní seznam slov.  
+**Co:**
+- Flashcard mód: anglické slovo → flip → český překlad + příkladová věta
+- Jednoduchý spaced repetition algoritmus (SM-2 nebo lightweight varianta)
+- Denní výzva: "Procvič 10 slovíček z posledních lekcí"
+- Export jako PDF nebo CSV pro tisk
 
-## 7. Technický dluh / Issues
-1. **P0 — Bezpečnost:** API klíč exposed v client-side kódu (potřeba backend proxy)
-2. **P1 — Architektura:** App.tsx 844 řádků — rozdělit na Layout, Header, SessionProvider
-3. **P1 — Audio:** Deprecated ScriptProcessorNode → migrace na AudioWorklet
-4. **P1 — Kvalita:** Žádné unit/integration testy
-5. **P2 — TTS:** Nespolehlivý výběr hlasů (hardcoded jména vs. dynamický seznam)
-6. **P2 — State:** Globální `let chatSession` v services — není React-idiomatic
-7. **P3 — i18n:** České řetězce hardcoded v kódu (chybí i18n systém)
-8. **P3 — PWA:** Logika PWA install banneru přímo v App.tsx
+### B5 — Pronunciation scoring
+**Proč:** Uživatel neví, jak moc správně vyslovuje — Aria jen opakuje, nehodnotí.  
+**Co:**
+- Word-level confidence z Live API přepisu
+- Zobrazení skóre výslovnosti 0–100% per slovo v přepisu
+- Zvýraznění špatně vyslovených slov (červená) vs. správných (zelená)
 
-## 8. Roadmap
-1. **v1.4.0** — Refaktoring App.tsx (custom hooks: usePWA, useSession, useScenario)
-2. **v1.5.0** — Backend proxy pro API klíč (Cloudflare Workers / Vercel Edge)
-3. **v1.6.0** — AudioWorklet migrace, dynamický voice list
-4. **v2.0.0** — React Context pro globální state, test suite, i18n
+### B6 — Listening comprehension mode
+**Proč:** Chybí mód zaměřený na poslouchání — všechny současné módy předpokládají, že uživatel mluví.  
+**Co:**
+- Aria přečte krátký text nebo příběh (3–5 vět)
+- Uživatel odpoví na 2–3 otázky o obsahu (hlasem nebo textem)
+- Aria zkontroluje porozumění a vysvětlí, co bylo špatně
+
+### B7 — Writing practice mode
+**Proč:** Aplikace je zaměřena na mluvení, ale písemná angličtina je jiná dovednost.  
+**Co:**
+- Aria zadá téma nebo situaci (e-mail, krátký text, popis obrázku)
+- Uživatel napíše 3–5 vět
+- Aria opraví gramatiku, pravopis, styl — stejná strictness škála jako u mluvení
+
+### B8 — Gamification
+**Proč:** Udržení motivace je hlavní problém dlouhodobého učení.  
+**Co:**
+- XP za každou dokončenou lekci (bonus za streak)
+- Odznaky: první Live session, 7-day streak, 50 opravených chyb, nový scénář...
+- Weekly challenge: "Procvič 5 různých scénářů tento týden"
+- Jednoduché levely: Beginner → Intermediate → Advanced → Fluent
+
+---
+
+## PRIORITA 3 — Pokročilé funkce
+
+### B9 — Vlastní scénáře (uživatelsky definované)
+**Proč:** 15 předpřipravených scénářů nestačí pro specifické potřeby (technické obory, koníčky).  
+**Co:**
+- Formulář: název scénáře, ikona, role Arie, popis situace
+- Uložení v localStorage nebo exportovatelné jako JSON soubor
+- Sdílení scénáře přes URL (base64 encoded parametr)
+
+### B10 — Progress grafy a analytika
+**Proč:** Aktuální statistiky jsou textové — chybí vizualizace trendů v čase.  
+**Co:**
+- Čárový graf chybovosti posledních 30 dní (Chart.js nebo Recharts)
+- GitHub-style heatmapa aktivity
+- Breakdown nejčastějších chyb: articles / prepositions / tenses / word choice
+- Poměr čas mluvení vs. čas poslouchání per lekce
+
+### B11 — Export a sdílení
+**Co:**
+- Export session summary jako PDF (browser print API)
+- Export celé lesson history jako CSV nebo JSON
+- Sdílení session summary jako screenshot (html2canvas)
+
+### B12 — Video mód v Live API
+**Proč:** Gemini 3.1 Live API podporuje video vstup — Aria může "vidět" prostředí.  
+**Co:**
+- Kamera zapnuta → Aria komentuje vizuální kontext
+- Ukázat jídelní lístek → Aria pomůže přečíst a objednat v angličtině
+- Ukázat text → Aria pomůže s výslovností vizuálně sledovaného textu
+- Ukázat předmět → Aria ho pojmenuje a vytvoří z toho konverzaci
+
+### B13 — Offline mód (základní)
+**Co:**
+- Service Worker s cache pro statické assety (JS, CSS, obrázky)
+- Offline stránka místo prázdné obrazovky
+- Vocabulary list dostupný offline (je v localStorage, jen UI potřebuje cache)
+
+### B14 — Uživatelské účty a cloud sync
+**Proč:** Změna zařízení = ztráta veškerých dat z localStorage.  
+**Co:**
+- Google Sign-In (OAuth)
+- Sync nastavení, vocabulary, lesson history do cloudu (Cloudflare KV nebo D1)
+- Funguje cross-device (mobil + počítač sdílí pokrok)
+**Závisí na:** B1, Cloudflare Workers backend
+
+---
+
+## Technický dluh
+
+| ID | Popis | Priorita |
+|----|-------|----------|
+| TD1 | `ScriptProcessorNode` je deprecated → migrovat na `AudioWorkletProcessor` | P1 |
+| TD2 | `process.env.API_KEY` v klientském kódu → viz B1 | P0 |
+| TD3 | `useLiveAPI.ts` je velký hook (450 řádků) → zvážit rozdělení | P2 |
+| TD4 | Vocabulary auto-detekce (regex heuristika) → nahradit Gemini dotazem | P2 |
+| TD5 | Globální `let chatSession` v `geminiService.ts` není React-idiomatic | P2 |
+| TD6 | Žádné testy — přidat unit testy alespoň pro utils funkce | P2 |
+| TD7 | České řetězce hardcoded v kódu — chybí i18n systém | P3 |
+
+---
+
+## Verze roadmap (orientační)
+
+| Verze | Hlavní přidaná hodnota |
+|-------|----------------------|
+| v1.5.0 | Reading Mode polish + Vocabulary flashcards (B4) |
+| v1.6.0 | Backend proxy + ephemeral token (B1, B2) + model fallback (B3) |
+| v2.0.0 | Pronunciation scoring + Progress grafy (B5, B10) |
+| v2.5.0 | Gamification + vlastní scénáře + Listening mode (B6, B8, B9) |
+| v3.0.0 | Uživatelské účty + cloud sync + Video mód (B12, B14) |
