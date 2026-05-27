@@ -14,6 +14,7 @@ import VocabularyModal from './components/VocabularyModal';
 import { loadVocabulary, extractVocabFromTranscript, addVocabularyWordWithDefinition } from './utils/vocabularyUtils';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useTextToSpeech } from './hooks/useTextToSpeech';
+import { useWakeLock } from './hooks/useWakeLock';
 import { getUsageStats } from './utils/usageUtils';
 import { loadSettings, saveSettings } from './utils/settingsUtils';
 import { appendLessonHistory, getProgressStats, loadLessonHistory } from './utils/sessionHistoryUtils';
@@ -38,6 +39,8 @@ const DEFAULT_SETTINGS: AppSettings = {
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
 function App() {
+  useWakeLock(true);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
