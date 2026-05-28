@@ -22,6 +22,12 @@ interface VocabularyModalProps {
 
 type ViewMode = 'list' | 'recall' | 'recall-summary';
 
+// Maličká pomocná komponenta — bezpečně vrátí do listu bez setState-during-render.
+const RecallEmptyGuard: React.FC<{ onEmpty: () => void }> = ({ onEmpty }) => {
+  useEffect(() => { onEmpty(); }, [onEmpty]);
+  return null;
+};
+
 const escapeHtml = (s: string) =>
   s.replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -70,6 +76,23 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
       setFlipped(false);
     }
   }, [isOpen]);
+
+  // ─── Memoized values (MUST be before any early return — React hooks rule) ─
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return vocabList;
+    return vocabList.filter(e =>
+      e.word.toLowerCase().includes(q) ||
+      (e.definition && e.definition.toLowerCase().includes(q))
+    );
+  }, [vocabList, search]);
+
+  const counts = useMemo(() => {
+    const c = { new: 0, learning: 0, mastered: 0 };
+    vocabList.forEach(e => { c[e.status]++; });
+    return c;
+  }, [vocabList]);
 
   if (!isOpen) return null;
 
@@ -164,22 +187,7 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
     win.print();
   };
 
-  // ─── Search filter ────────────────────────────────────────────────
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return vocabList;
-    return vocabList.filter(e =>
-      e.word.toLowerCase().includes(q) ||
-      (e.definition && e.definition.toLowerCase().includes(q))
-    );
-  }, [vocabList, search]);
-
-  const counts = useMemo(() => {
-    const c = { new: 0, learning: 0, mastered: 0 };
-    vocabList.forEach(e => { c[e.status]++; });
-    return c;
-  }, [vocabList]);
+  // ─── Search filter helpers ────────────────────────────────────────
 
   const handleAddFromEmptySearch = async () => {
     const trimmed = search.trim();
@@ -298,9 +306,10 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
   if (view === 'recall') {
     const current = queue[queueIdx];
     if (!current) {
-      // safety — fronta vyprázdněná → summary
-      setView('recall-summary');
-      return null;
+      // Safety: prázdná fronta → vrátíme se do listu (setState v useEffect, ne během renderu)
+      return (
+        <RecallEmptyGuard onEmpty={() => setView('list')} />
+      );
     }
     const c = statusColors(current.status);
     return (

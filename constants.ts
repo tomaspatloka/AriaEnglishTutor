@@ -1,5 +1,21 @@
-export const APP_VERSION = "v1.5.0";
+export const APP_VERSION = "v1.6.0";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.6.0",
+    date: "2026-05-28",
+    title: "Slovníček: auto-překlad, hledání, status barvy, flashcard Recall mód",
+    changes: [
+      "Auto-překlad při ručním přidání slova — Aria automaticky doplní český překlad přes Gemini (stejně jako u hlasového add).",
+      "Nová sekce 'vlastní význam' — expandovatelná textarea pro idiomy a technické termíny, kde auto-překlad nestačí.",
+      "🔍 Hledání nahoře v slovníčku — instant filter přes slovo i překlad, clear-X tlačítko, empty-state nabízí přidat hledaný výraz.",
+      "Status slov: 🔵 nové → 🟠 učím se → 🟢 umím (3× v řadě věděl) — barevný proužek na každém slově + badge + barevný okraj na pill barech v Reading Mode.",
+      "Inline edit definice — klepnutím na slovo nebo překlad otevře textarea pro úpravu (užitečné pro špatné Gemini překlady).",
+      "🎯 Procvičit (flashcard mód) — klep na kartu pro flip, 3 tlačítka (😐 Nevěděl / 🙂 Tak nějak / 😄 Vím), priorita fronty: učím se → nové → zvládnutá. Slovo, které nevíš, se vrátí na konec dnešní fronty.",
+      "Závěrečné summary po procvičování se statistikou (✅ věděl, 🙂 tak nějak, ❌ nevěděl) a tlačítky Znovu / Hotovo.",
+      "Tichá migrace starých localStorage dat — slova z předchozích verzí dostanou status='new' a nulové počty, bez ztráty.",
+      "Fix: React error #310 (hooks rule violation) — useMemo přesunuté před early return; opraveno setState-during-render v recall fallbacku.",
+    ],
+  },
   {
     version: "v1.5.0",
     date: "2026-05-24",
