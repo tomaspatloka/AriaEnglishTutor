@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AppSettings, VocabularyEntry, Message } from '../types';
 import { useLiveAPI } from '../hooks/useLiveAPI';
-import { addVocabularyWordWithDefinition, extractVocabFromTranscript, statusColors } from '../utils/vocabularyUtils';
+import { addVocabularyWordWithDefinition, extractVocabFromTranscript, statusColors, countDueForRefresh } from '../utils/vocabularyUtils';
 import { translateWord } from '../services/geminiService';
 import PhotoCaptureSheet from './PhotoCaptureSheet';
 
@@ -23,6 +23,12 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
   // v1.6 — Photo capture: referenční text z fotky stránky
   const [referenceText, setReferenceText] = useState<string | null>(null);
   const [showPhotoSheet, setShowPhotoSheet] = useState(false);
+
+  // v1.6 — Quick-add slovo z pill baru (bez otevření modalu)
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [quickAddWord, setQuickAddWord] = useState('');
+  const quickAddInputRef = useRef<HTMLInputElement>(null);
+  const quickAddPopupRef = useRef<HTMLDivElement>(null);
 
   const {
     connect,
@@ -72,6 +78,36 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
     };
   }, [showMenu]);
 
+  // Quick-add: autofocus po otevření + zavřít na klik mimo
+  useEffect(() => {
+    if (showQuickAdd) {
+      const t = setTimeout(() => quickAddInputRef.current?.focus(), 60);
+      return () => clearTimeout(t);
+    }
+  }, [showQuickAdd]);
+
+  useEffect(() => {
+    if (!showQuickAdd) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (quickAddPopupRef.current && !quickAddPopupRef.current.contains(e.target as Node)) {
+        setShowQuickAdd(false);
+        setQuickAddWord('');
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowQuickAdd(false);
+        setQuickAddWord('');
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [showQuickAdd]);
+
   // F3 — Auto-detect vocabulary from user's speech + CZ definition
   useEffect(() => {
     if (!inputTranscript) {
@@ -97,6 +133,15 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conversationLog]);
+
+  const handleQuickAdd = () => {
+    const trimmed = quickAddWord.trim();
+    if (!trimmed) return;
+    // Fire-and-forget — slovo se objeví v pill baru hned, překlad doplní async
+    addVocabularyWordWithDefinition(trimmed, () => translateWord(trimmed), onVocabChange);
+    setQuickAddWord('');
+    setShowQuickAdd(false);
+  };
 
   const handleToggle = () => {
     // While paused the mic button is rendered as disabled (opacity-60, cursor-default).
@@ -408,51 +453,106 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
         onTextExtracted={setReferenceText}
       />
 
-      {/* F4 — Redesigned vocabulary bar */}
+      {/* F4 — Vocabulary bar (defaultně skrývá mastered) */}
       <div className="shrink-0 bg-slate-900/80 border-t border-white/10 px-4 py-2.5 z-10 relative">
-        {/* Row 1: Word pills with CZ definitions */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1.5 min-h-[30px]">
-          {vocabList.length === 0 ? (
-            <p className="text-slate-600 text-xs italic whitespace-nowrap">
-              Řekni „I don't know the word X" — Aria ho zapíše
-            </p>
-          ) : (
+        {(() => {
+          const visiblePills = vocabList.filter(e => e.status !== 'mastered');
+          const masteredHidden = vocabList.length - visiblePills.length;
+          const dueRefresh = countDueForRefresh(vocabList);
+          return (
             <>
-              {vocabList.slice(0, 5).map(entry => {
-                const c = statusColors(entry.status);
-                return (
-                  <button
-                    key={entry.id}
-                    onClick={() => onOpenVocabModal()}
-                    title={entry.definition ? `${entry.word} · ${entry.definition}` : entry.word}
-                    className={`shrink-0 flex items-center gap-1 max-w-[180px] ${c.badgeBg} ${c.badgeText} border ${c.pillBorder} rounded-full px-3 py-0.5 text-xs font-semibold hover:brightness-125 transition active:scale-95`}
-                  >
-                    <span className="whitespace-nowrap">{entry.word}</span>
-                    {entry.definition && (
-                      <span className="opacity-60 font-normal truncate">· {entry.definition}</span>
+              {/* Row 1: Word pills + quick-add „+" */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1.5 min-h-[30px]">
+                {visiblePills.length === 0 ? (
+                  <p className="text-slate-600 text-xs italic whitespace-nowrap">
+                    {vocabList.length === 0
+                      ? 'Řekni „I don’t know the word X" — nebo klepni +'
+                      : `Všechna slova jsou zvládnutá (${masteredHidden} skrytá)`}
+                  </p>
+                ) : (
+                  <>
+                    {visiblePills.slice(0, 5).map(entry => {
+                      const c = statusColors(entry.status);
+                      return (
+                        <button
+                          key={entry.id}
+                          onClick={() => onOpenVocabModal()}
+                          title={entry.definition ? `${entry.word} · ${entry.definition}` : entry.word}
+                          className={`shrink-0 flex items-center gap-1 max-w-[180px] ${c.badgeBg} ${c.badgeText} border ${c.pillBorder} rounded-full px-3 py-0.5 text-xs font-semibold hover:brightness-125 transition active:scale-95`}
+                        >
+                          <span className="whitespace-nowrap">{entry.word}</span>
+                          {entry.definition && (
+                            <span className="opacity-60 font-normal truncate">· {entry.definition}</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                    {visiblePills.length > 5 && (
+                      <span className="shrink-0 text-slate-500 text-xs px-1">+{visiblePills.length - 5}</span>
                     )}
-                  </button>
-                );
-              })}
-              {vocabList.length > 5 && (
-                <span className="shrink-0 text-slate-500 text-xs px-1">+{vocabList.length - 5}</span>
+                  </>
+                )}
+
+                {/* Quick-add tlačítko */}
+                <button
+                  onClick={() => setShowQuickAdd(v => !v)}
+                  aria-label="Rychle přidat slovo"
+                  className="shrink-0 ml-auto w-7 h-7 flex items-center justify-center bg-blue-500/20 text-blue-300 border border-blue-400/30 rounded-full text-base font-bold hover:bg-blue-500/30 transition active:scale-95"
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Row 2: Label + counters + open-modal */}
+              <div className="flex items-center justify-between mt-1 gap-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-600 whitespace-nowrap">
+                  Slovníček
+                  {masteredHidden > 0 && (
+                    <span className="text-emerald-400/60 ml-1.5 normal-case tracking-normal font-bold">· 🟢 {masteredHidden} skrytá</span>
+                  )}
+                  {dueRefresh > 0 && (
+                    <span className="text-amber-300 ml-1.5 normal-case tracking-normal font-bold">· ↻ {dueRefresh}</span>
+                  )}
+                </p>
+                <button
+                  onClick={() => onOpenVocabModal()}
+                  className="flex items-center gap-1.5 px-3 py-1 bg-blue-500/15 text-blue-300 text-xs font-bold rounded-full border border-blue-400/25 hover:bg-blue-500/25 transition active:scale-95"
+                >
+                  📚 {vocabList.length} {vocabList.length === 1 ? 'slovo' : vocabList.length < 5 ? 'slova' : 'slov'} →
+                </button>
+              </div>
+
+              {/* Quick-add popup */}
+              {showQuickAdd && (
+                <div
+                  ref={quickAddPopupRef}
+                  className="absolute bottom-full right-2 mb-2 w-72 max-w-[calc(100vw-2rem)] bg-slate-800 border border-blue-400/30 rounded-2xl shadow-2xl p-3 z-50"
+                >
+                  <p className="text-[10px] font-black uppercase tracking-wider text-blue-300 mb-1.5">+ Rychle přidat slovo</p>
+                  <div className="flex gap-2">
+                    <input
+                      ref={quickAddInputRef}
+                      type="text"
+                      value={quickAddWord}
+                      onChange={e => setQuickAddWord(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleQuickAdd()}
+                      placeholder="anglické slovo..."
+                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-400/50"
+                    />
+                    <button
+                      onClick={handleQuickAdd}
+                      disabled={!quickAddWord.trim()}
+                      className="px-3 py-1.5 bg-blue-500 text-white text-xs font-bold rounded-lg hover:bg-blue-400 disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95"
+                    >
+                      ✓
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1.5">Aria automaticky přeloží</p>
+                </div>
               )}
             </>
-          )}
-        </div>
-
-        {/* Row 2: Label + open modal button */}
-        <div className="flex items-center justify-between mt-1">
-          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-600">
-            Slovníček
-          </p>
-          <button
-            onClick={() => onOpenVocabModal()}
-            className="flex items-center gap-1.5 px-3 py-1 bg-blue-500/15 text-blue-300 text-xs font-bold rounded-full border border-blue-400/25 hover:bg-blue-500/25 transition active:scale-95"
-          >
-            📚 {vocabList.length} {vocabList.length === 1 ? 'slovo' : vocabList.length < 5 ? 'slova' : 'slov'} →
-          </button>
-        </div>
+          );
+        })()}
       </div>
 
     </div>

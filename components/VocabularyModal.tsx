@@ -5,11 +5,13 @@ import {
   clearVocabulary,
   addVocabularyWord,
   addVocabularyWordWithDefinition,
+  addManyVocabularyWords,
   updateVocabularyDefinition,
   buildRecallQueue,
   recordRecallResult,
   statusLabel,
   statusColors,
+  countDueForRefresh,
 } from '../utils/vocabularyUtils';
 import { translateWord } from '../services/geminiService';
 
@@ -46,6 +48,14 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
   const [editDefinitionDraft, setEditDefinitionDraft] = useState('');
   const newWordInputRef = useRef<HTMLInputElement>(null);
 
+  // F-B1 — skrýt zvládnutá slova v list view + pill bar. Default ON.
+  const [hideMastered, setHideMastered] = useState(true);
+
+  // F-A2 — bulk paste UI
+  const [showBulk, setShowBulk] = useState(false);
+  const [bulkText, setBulkText] = useState('');
+  const [bulkBusy, setBulkBusy] = useState(false);
+
   // Recall state
   const [view, setView] = useState<ViewMode>('list');
   const [includeMastered, setIncludeMastered] = useState(false);
@@ -81,18 +91,21 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return vocabList;
-    return vocabList.filter(e =>
+    const base = hideMastered ? vocabList.filter(e => e.status !== 'mastered') : vocabList;
+    if (!q) return base;
+    return base.filter(e =>
       e.word.toLowerCase().includes(q) ||
       (e.definition && e.definition.toLowerCase().includes(q))
     );
-  }, [vocabList, search]);
+  }, [vocabList, search, hideMastered]);
 
   const counts = useMemo(() => {
     const c = { new: 0, learning: 0, mastered: 0 };
     vocabList.forEach(e => { c[e.status]++; });
     return c;
   }, [vocabList]);
+
+  const dueForRefreshCount = useMemo(() => countDueForRefresh(vocabList), [vocabList]);
 
   if (!isOpen) return null;
 
@@ -139,6 +152,27 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
     if (!confirm('Smazat celý slovníček?')) return;
     clearVocabulary();
     onVocabChange([]);
+  };
+
+  const handleBulkAdd = async () => {
+    const text = bulkText.trim();
+    if (!text || bulkBusy) return;
+    setBulkBusy(true);
+    try {
+      const added = await addManyVocabularyWords(
+        text,
+        (w) => translateWord(w),
+        onVocabChange
+      );
+      if (added > 0) {
+        setBulkText('');
+        setShowBulk(false);
+      } else {
+        // Žádné nové slovo → ponech text, ať uživatel vidí
+      }
+    } finally {
+      setBulkBusy(false);
+    }
   };
 
   const handleStartEdit = (entry: VocabularyEntry) => {
@@ -412,7 +446,7 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
 
   // ─── Render: List view (default) ──────────────────────────────────
 
-  const canStartRecall = vocabList.length > 0;
+  const canStartRecall = buildRecallQueue(vocabList, includeMastered).length > 0;
   const recallQueueSize = buildRecallQueue(vocabList, includeMastered).length;
 
   return (
@@ -428,16 +462,24 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
               {vocabList.length > 0 && (
                 <span className="text-slate-600"> · 🔵 {counts.new} · 🟠 {counts.learning} · 🟢 {counts.mastered}</span>
               )}
+              {dueForRefreshCount > 0 && (
+                <span className="ml-1.5 text-amber-300 font-semibold">· ↻ {dueForRefreshCount} k zopáknutí</span>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-2">
             {canStartRecall && (
               <button
                 onClick={handleStartRecall}
-                className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-400 transition active:scale-95"
+                className="relative px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-400 transition active:scale-95"
                 aria-label="Spustit procvičování"
               >
                 🎯 Procvičit
+                {dueForRefreshCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-amber-400 text-slate-900 rounded-full min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-black px-1 border-2 border-slate-900">
+                    ↻
+                  </span>
+                )}
               </button>
             )}
             {vocabList.length > 0 && (
@@ -456,9 +498,9 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
           </div>
         </div>
 
-        {/* Search */}
+        {/* Search + Hide-mastered toggle */}
         {vocabList.length > 0 && (
-          <div className="px-5 py-2 border-b border-white/10 shrink-0">
+          <div className="px-5 py-2 border-b border-white/10 shrink-0 space-y-2">
             <div className="relative">
               <input
                 type="text"
@@ -479,6 +521,24 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
                 </button>
               )}
             </div>
+            {counts.mastered > 0 && (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={!hideMastered}
+                onClick={() => setHideMastered(v => !v)}
+                className="w-full flex items-center justify-between gap-2 px-1 py-0.5 group"
+              >
+                <span className="text-[11px] text-slate-400 font-semibold">
+                  {hideMastered
+                    ? `Skrytá zvládnutá: ${counts.mastered}`
+                    : `Zobrazena všechna slova (${counts.mastered} zvládnutých)`}
+                </span>
+                <span className={`w-8 h-5 rounded-full transition-colors flex items-center px-0.5 shrink-0 ${hideMastered ? 'bg-emerald-500/60' : 'bg-slate-600'}`}>
+                  <span className={`w-3.5 h-3.5 rounded-full bg-white shadow transition-transform ${hideMastered ? 'translate-x-3' : 'translate-x-0'}`} />
+                </span>
+              </button>
+            )}
           </div>
         )}
 
@@ -502,14 +562,25 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
               Přidat
             </button>
           </div>
-          {!showCustomMeaning ? (
-            <button
-              onClick={() => setShowCustomMeaning(true)}
-              className="mt-2 text-[10px] font-bold text-blue-400/70 hover:text-blue-300 transition uppercase tracking-wider"
-            >
-              + vlastní význam
-            </button>
-          ) : (
+          <div className="mt-2 flex items-center gap-3">
+            {!showCustomMeaning && (
+              <button
+                onClick={() => setShowCustomMeaning(true)}
+                className="text-[10px] font-bold text-blue-400/70 hover:text-blue-300 transition uppercase tracking-wider"
+              >
+                + vlastní význam
+              </button>
+            )}
+            {!showBulk && (
+              <button
+                onClick={() => setShowBulk(true)}
+                className="text-[10px] font-bold text-blue-400/70 hover:text-blue-300 transition uppercase tracking-wider"
+              >
+                ⌷ vložit více
+              </button>
+            )}
+          </div>
+          {showCustomMeaning && (
             <div className="mt-2">
               <textarea
                 value={customMeaning}
@@ -524,6 +595,34 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
               >
                 Zrušit vlastní význam
               </button>
+            </div>
+          )}
+          {showBulk && (
+            <div className="mt-2">
+              <textarea
+                value={bulkText}
+                onChange={e => setBulkText(e.target.value)}
+                placeholder="Vlož více slov (čárky, středníky nebo nové řádky)... např. apple, run, decide"
+                rows={3}
+                disabled={bulkBusy}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-blue-400/50 resize-none disabled:opacity-50"
+              />
+              <div className="flex items-center gap-2 mt-1.5">
+                <button
+                  onClick={handleBulkAdd}
+                  disabled={!bulkText.trim() || bulkBusy}
+                  className="px-3 py-1 bg-blue-500 text-white text-[10px] font-bold rounded-lg hover:bg-blue-400 disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95"
+                >
+                  {bulkBusy ? '⏳ Překládám...' : '✓ Přidat všechna + přeložit'}
+                </button>
+                <button
+                  onClick={() => { setShowBulk(false); setBulkText(''); }}
+                  disabled={bulkBusy}
+                  className="text-[10px] font-bold text-slate-500 hover:text-slate-300 transition disabled:opacity-50"
+                >
+                  Zrušit
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -555,6 +654,7 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
             const c = statusColors(entry.status);
             const isEditing = editingId === entry.id;
             const isPending = pendingTranslateIds.has(entry.id);
+            const isRefreshDue = entry.status === 'mastered' && (!entry.lastReviewedAt || Date.now() - entry.lastReviewedAt >= 7 * 24 * 60 * 60 * 1000);
             return (
               <div
                 key={entry.id}
@@ -579,6 +679,11 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
                         <span className={`inline-block px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${c.badgeBg} ${c.badgeText}`}>
                           {statusLabel(entry.status)}
                         </span>
+                        {isRefreshDue && (
+                          <span className="inline-block px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300" title="Připomenout">
+                            ↻ k zopáknutí
+                          </span>
+                        )}
                       </div>
 
                       {isEditing ? (
@@ -670,7 +775,7 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
                 onChange={e => setIncludeMastered(e.target.checked)}
                 className="accent-emerald-400"
               />
-              Procvičovat i zvládnutá ({recallQueueSize} ve frontě)
+              I všechna zvládnutá ({recallQueueSize} ve frontě)
             </label>
             <button
               onClick={handleClearAll}

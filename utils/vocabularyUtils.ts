@@ -3,6 +3,8 @@ import { VocabularyEntry, VocabularyStatus } from '../types';
 const VOCAB_KEY = 'aria_vocabulary';
 
 const MASTERED_THRESHOLD = 3;
+const REFRESH_AFTER_DAYS = 7;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const VOCAB_PATTERNS = [
   /i (?:don't|do not) know (?:the (?:word|meaning of) )?["']?(\w[\w-]*)["']?/i,
@@ -141,15 +143,75 @@ export const recordRecallResult = (id: string, result: RecallResult): Vocabulary
   return entries;
 };
 
-// Priorita pro recall: learning > new > mastered (mastered jen pokud includeMastered)
+// Zvládnuté slovo, které čeká na refresh (lastReviewedAt + 7d ≤ now).
+// Mastered slova s neexistujícím lastReviewedAt jsou považována za hraniční (raději ne — preference: refresh).
+export const isDueForRefresh = (entry: VocabularyEntry, now: number = Date.now()): boolean => {
+  if (entry.status !== 'mastered') return false;
+  if (!entry.lastReviewedAt) return true;
+  return now - entry.lastReviewedAt >= REFRESH_AFTER_DAYS * DAY_MS;
+};
+
+export const countDueForRefresh = (entries: VocabularyEntry[]): number => {
+  const now = Date.now();
+  return entries.reduce((acc, e) => acc + (isDueForRefresh(e, now) ? 1 : 0), 0);
+};
+
+// Priorita: learning > new > mastered-due-for-refresh > (volitelně) všechna ostatní mastered
 export const buildRecallQueue = (
   entries: VocabularyEntry[],
-  includeMastered: boolean
+  includeAllMastered: boolean
 ): VocabularyEntry[] => {
+  const now = Date.now();
   const learning = entries.filter(e => e.status === 'learning');
   const fresh = entries.filter(e => e.status === 'new');
-  const mastered = includeMastered ? entries.filter(e => e.status === 'mastered') : [];
-  return [...learning, ...fresh, ...mastered];
+  const masteredDue = entries.filter(e => e.status === 'mastered' && isDueForRefresh(e, now));
+  const masteredRest = includeAllMastered
+    ? entries.filter(e => e.status === 'mastered' && !isDueForRefresh(e, now))
+    : [];
+  return [...learning, ...fresh, ...masteredDue, ...masteredRest];
+};
+
+// Bulk add — z volně formátovaného textu (čárky / nové řádky / středníky / mezery), s autopřekladem.
+// Vrací počet skutečně přidaných slov (duplicity ignoruje).
+export const addManyVocabularyWords = async (
+  rawInput: string,
+  getDefinition: (word: string) => Promise<string>,
+  onUpdate: (entries: VocabularyEntry[]) => void
+): Promise<number> => {
+  const tokens = rawInput
+    .split(/[,;\n\r]+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0 && s.length <= 64);
+  if (tokens.length === 0) return 0;
+
+  // 1. Optimisticky přidat všechna slova (deduplikace v addVocabularyWord)
+  const existingBefore = loadVocabulary();
+  const existingNames = new Set(existingBefore.map(e => e.word.toLowerCase()));
+  const toAdd = tokens.filter(w => !existingNames.has(w.toLowerCase()));
+  if (toAdd.length === 0) return 0;
+
+  let current = existingBefore;
+  for (const w of toAdd) {
+    current = addVocabularyWord(w);
+  }
+  onUpdate(current);
+
+  // 2. Přeložit po jednom (paralelně — Gemini rate limit zvládne pár souběžných requestů)
+  await Promise.all(toAdd.map(async (w) => {
+    try {
+      const def = await getDefinition(w);
+      if (!def) return;
+      const after = loadVocabulary().map(e =>
+        e.word.toLowerCase() === w.toLowerCase() ? { ...e, definition: def } : e
+      );
+      saveVocabulary(after);
+      onUpdate(after);
+    } catch {
+      // slovo zůstane bez překladu
+    }
+  }));
+
+  return toAdd.length;
 };
 
 export const statusLabel = (status: VocabularyStatus): string => {

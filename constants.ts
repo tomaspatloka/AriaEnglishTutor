@@ -1,5 +1,18 @@
-export const APP_VERSION = "v1.6.0";
+export const APP_VERSION = "v1.7.0";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.7.0",
+    date: "2026-05-28",
+    title: "Slovníček round 2: quick-add v pill baru, bulk paste, skrýt zvládnutá, refresh po 7 dnech",
+    changes: [
+      "Quick-add + tlačítko v Reading Mode pill baru — mini popup s autofocus inputem, Aria přeloží automaticky, bez otevírání modalu.",
+      "Bulk paste ve slovníčku — sekce 'vložit více', vlož seznam slov oddělený čárkami/řádky/středníky, Aria přeloží paralelně.",
+      "Skrýt zvládnutá — toggle v list view i pill baru (default ON). Mastered slova nevidíš v běžném seznamu ani v Reading Mode baru, ale nezmizí — jen se schovají.",
+      "Refresh po 7 dnech — zvládnuté slovo se po týdnu od posledního procvičení automaticky vrátí do Recall fronty s nižší prioritou (lehká spaced repetition).",
+      "↻ badge na Procvičit tlačítku — vidíš na první pohled kolik slov čeká na zopáknutí.",
+      "Pill bar v Reading Mode má 2 řádky meta: počty + skrytá + due-for-refresh.",
+    ],
+  },
   {
     version: "v1.6.0",
     date: "2026-05-28",
