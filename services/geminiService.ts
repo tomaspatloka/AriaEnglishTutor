@@ -149,6 +149,62 @@ Sentence: ${userSentence}
   return (line || userSentence).replace(/^["'\-*\d.\s]+/, '').trim();
 };
 
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(',')[1] || '');
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+export const extractReadingText = async (imageFile: File): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const base64 = await fileToBase64(imageFile);
+
+  try {
+    const result = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: [{
+        role: 'user',
+        parts: [
+          {
+            inlineData: {
+              mimeType: imageFile.type || 'image/jpeg',
+              data: base64,
+            },
+          },
+          {
+            text: `Extract the main reading text from this photo of a printed page.
+Rules:
+- Return ONLY the extracted text, no preamble, no markdown.
+- Preserve paragraph breaks with double newlines.
+- Read top-to-bottom, left-to-right. If multiple columns, follow the main reading column.
+- Ignore page numbers, footers, captions, ads.
+- If the text is not in English, return it as-is (do not translate).
+- If you cannot read the text (blurry, no text visible), return exactly: NO_TEXT_DETECTED`,
+          },
+        ],
+      }],
+    });
+
+    incrementUsage();
+    const text = result.text?.trim() || '';
+
+    if (text === 'NO_TEXT_DETECTED' || !text) {
+      throw new Error('Nepodařilo se přečíst text z fotky. Zkus jinou fotku nebo lepší osvětlení.');
+    }
+
+    return text;
+  } catch (err: any) {
+    console.error('extractReadingText:', err?.message || 'unknown error');
+    if (err?.message?.startsWith('Nepodařilo')) throw err;
+    throw new Error('Nepodařilo se přečíst text z fotky. Zkus jinou fotku nebo lepší osvětlení.');
+  }
+};
+
 export const generatePracticeVariants = async (userSentence: string): Promise<string[]> => {
   const prompt = `
 Generate 3 improved English practice variants of this sentence.
