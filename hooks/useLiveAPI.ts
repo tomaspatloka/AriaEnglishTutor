@@ -25,7 +25,11 @@ interface UseLiveAPIReturn {
   conversationLog: Message[];
 }
 
-export const useLiveAPI = (settings: AppSettings, correctionLang: 'cs' | 'en' = 'cs'): UseLiveAPIReturn => {
+export const useLiveAPI = (
+  settings: AppSettings,
+  correctionLang: 'cs' | 'en' = 'cs',
+  referenceText: string | null = null
+): UseLiveAPIReturn => {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -224,7 +228,7 @@ export const useLiveAPI = (settings: AppSettings, correctionLang: 'cs' | 'en' = 
         model: LIVE_MODEL,
         config: {
           responseModalities: [Modality.AUDIO], // Chceme primárně audio
-          systemInstruction: { parts: [{ text: settings.interactionMode === 'reading' ? getReadingSystemInstruction(correctionLang) : getSystemInstruction(settings.level, settings.correctionStrictness, settings.showCzechTranslation, settings.activeScenario ? SCENARIOS.find(s => s.id === settings.activeScenario) : null) }] },
+          systemInstruction: { parts: [{ text: settings.interactionMode === 'reading' ? getReadingSystemInstruction(correctionLang, referenceText) : getSystemInstruction(settings.level, settings.correctionStrictness, settings.showCzechTranslation, settings.activeScenario ? SCENARIOS.find(s => s.id === settings.activeScenario) : null) }] },
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } },
           },
@@ -410,7 +414,7 @@ export const useLiveAPI = (settings: AppSettings, correctionLang: 'cs' | 'en' = 
       setError(mapLiveError(e));
       setIsConnected(false);
     }
-  }, [appendConversationChunk, cleanup, correctionLang, isConnected, mapLiveError, settings]);
+  }, [appendConversationChunk, cleanup, correctionLang, isConnected, mapLiveError, referenceText, settings]);
 
   // Cleanup on unmount — release MediaStream and AudioContext if component disappears
   useEffect(() => {

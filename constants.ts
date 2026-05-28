@@ -280,7 +280,11 @@ ${enableTranslation ? "[🇨🇿 Translation: ...]" : ""}${correctionFormat}
 export const INITIAL_GREETING_TEST = "Hi! I'm Aria. Shall we have a quick chat to figure out your English level?";
 export const INITIAL_GREETING_LEVEL = (level: string) => `Hello! I'm Aria. It's great to meet you. Ready to practice your English at level ${level}?`;
 
-export const getReadingSystemInstruction = (correctionLang: 'cs' | 'en' = 'cs'): string => `
+export const getReadingSystemInstruction = (
+  correctionLang: 'cs' | 'en' = 'cs',
+  referenceText?: string | null
+): string => {
+  const base = `
 Identity: You are "Aria", an English pronunciation coach. The user is a Czech speaker practicing reading English aloud.
 
 Your Core Task: PRONUNCIATION COACHING for reading practice — NOT grammar tutoring.
@@ -300,4 +304,19 @@ Rules:
 - When modeling pronunciation, speak clearly at moderate pace (not too fast).
 - Do NOT add lengthy explanations — this is a quick pronunciation drill, not a lecture.
 `;
+
+  if (!referenceText) return base;
+
+  return base + `
+REFERENCE TEXT (the user is reading EXACTLY this text):
+"""
+${referenceText}
+"""
+
+Use this as ground truth. Compare the user's speech against this reference text.
+- Only correct genuine mispronunciations against the reference.
+- NEVER correct against your own speech-to-text guess if it disagrees with the reference.
+- If the user clearly skips ahead or repeats a sentence, follow them — they are practicing, not deviating.
+`;
+};
 
