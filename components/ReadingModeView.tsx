@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AppSettings, VocabularyEntry, Message } from '../types';
 import { useLiveAPI } from '../hooks/useLiveAPI';
-import { addVocabularyWordWithDefinition, extractVocabFromTranscript } from '../utils/vocabularyUtils';
+import { addVocabularyWordWithDefinition, extractVocabFromTranscript, statusColors } from '../utils/vocabularyUtils';
 import { translateWord } from '../services/geminiService';
 import PhotoCaptureSheet from './PhotoCaptureSheet';
 
@@ -418,19 +418,22 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
             </p>
           ) : (
             <>
-              {vocabList.slice(0, 5).map(entry => (
-                <button
-                  key={entry.id}
-                  onClick={() => onOpenVocabModal()}
-                  title={entry.definition ? `${entry.word} · ${entry.definition}` : entry.word}
-                  className="shrink-0 flex items-center gap-1 max-w-[180px] bg-blue-500/15 text-blue-300 border border-blue-400/25 rounded-full px-3 py-0.5 text-xs font-semibold hover:bg-blue-500/25 transition active:scale-95"
-                >
-                  <span className="whitespace-nowrap">{entry.word}</span>
-                  {entry.definition && (
-                    <span className="text-blue-400/60 font-normal truncate">· {entry.definition}</span>
-                  )}
-                </button>
-              ))}
+              {vocabList.slice(0, 5).map(entry => {
+                const c = statusColors(entry.status);
+                return (
+                  <button
+                    key={entry.id}
+                    onClick={() => onOpenVocabModal()}
+                    title={entry.definition ? `${entry.word} · ${entry.definition}` : entry.word}
+                    className={`shrink-0 flex items-center gap-1 max-w-[180px] ${c.badgeBg} ${c.badgeText} border ${c.pillBorder} rounded-full px-3 py-0.5 text-xs font-semibold hover:brightness-125 transition active:scale-95`}
+                  >
+                    <span className="whitespace-nowrap">{entry.word}</span>
+                    {entry.definition && (
+                      <span className="opacity-60 font-normal truncate">· {entry.definition}</span>
+                    )}
+                  </button>
+                );
+              })}
               {vocabList.length > 5 && (
                 <span className="shrink-0 text-slate-500 text-xs px-1">+{vocabList.length - 5}</span>
               )}

@@ -57,11 +57,24 @@ export interface LessonHistoryEntry {
   summary: SessionSummary;
 }
 
+export type VocabularyStatus = 'new' | 'learning' | 'mastered';
+
 export interface VocabularyEntry {
   id: string;
   word: string;
   addedAt: number;
   definition?: string;
+  status: VocabularyStatus;
+  correctCount: number;
+  incorrectCount: number;
+  lastReviewedAt?: number;
+}
+
+export interface RecallSessionResult {
+  total: number;
+  correct: number;
+  incorrect: number;
+  skipped: number;
 }
 
 export interface ProgressStats {
