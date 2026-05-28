@@ -1,5 +1,18 @@
-export const APP_VERSION = "v1.7.0";
+export const APP_VERSION = "v1.7.1";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.7.1",
+    date: "2026-05-28",
+    title: "Voice triggers: řekni Arii ať přidá slovo, ona ho přidá",
+    changes: [
+      "Rozšířené české triggery v Reading Mode auto-detekci slov z hlasu: 'přidej slovo X', 'přidej X do slovníku', 'do slovníčku X', 'slovník X', 'zapiš X', 'ulož X', 'napiš X', 'nevím X', 'nerozumím X', 'co to je X', 'co to znamená X'.",
+      "Anglické triggery: 'add the word X', 'save X', 'add X to vocabulary'.",
+      "Multi-match v jednom přepisu — pokud řekneš víc spouštěcích frází za sebou, zachytí všechna slova.",
+      "Toast '✓ Přidáno: rope' nad pill barem na 2.8 sekundy — vidíš okamžitě, že Aria slovo zachytila.",
+      "Blacklist krátkých českých spojek (ten/to/ja/si/...) chrání před false positives.",
+      "Minimální délka slova 3 znaky — 'to'/'na' nikdy jako vocab slovo.",
+    ],
+  },
   {
     version: "v1.7.0",
     date: "2026-05-28",

@@ -6,15 +6,44 @@ const MASTERED_THRESHOLD = 3;
 const REFRESH_AFTER_DAYS = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// Triggery pro auto-detekci slov z přepisu hlasu (jen anglické cílové slovo přes \w = ASCII).
+// Cíl: pokrýt přirozené české/anglické formulace během čtení.
 const VOCAB_PATTERNS = [
-  /i (?:don't|do not) know (?:the (?:word|meaning of) )?["']?(\w[\w-]*)["']?/i,
-  /what (?:does|is) ["']?(\w[\w-]*)["']? mean/i,
-  /(?:the )?meaning of ["']?(\w[\w-]*)["']?/i,
-  /(?:translate|translation of?) ["']?(\w[\w-]*)["']?/i,
-  /co (?:znamená|je) ["']?(\w[\w-]*)["']?/i,
-  /neznám (?:slovo )?["']?(\w[\w-]*)["']?/i,
-  /["'](\w[\w-]*)["']\s*(?:co to|what does|what is)/i,
+  // —— Anglicky ——
+  /i (?:don't|do not) know (?:the (?:word|meaning of) )?["']?(\w[\w-]{2,})["']?/i,
+  /what (?:does|is) ["']?(\w[\w-]{2,})["']? mean/i,
+  /(?:the )?meaning of ["']?(\w[\w-]{2,})["']?/i,
+  /(?:translate|translation of?) ["']?(\w[\w-]{2,})["']?/i,
+  /add (?:the )?(?:word )?["']?(\w[\w-]{2,})["']?(?: to (?:my )?(?:vocab|vocabulary|dictionary))?/i,
+  /save (?:the )?(?:word )?["']?(\w[\w-]{2,})["']?/i,
+
+  // —— Česky — vysvětlení („co znamená / co je / co to") ——
+  /co (?:znamená|je|to (?:znamená|je)) ["']?(\w[\w-]{2,})["']?/i,
+  /co to (?:je |znamená )?["']?(\w[\w-]{2,})["']?/i,
+
+  // —— Česky — neznalost („neznám / nevím / nerozumím") ——
+  /(?:neznám|nevím|nerozumím)(?:\s+(?:to|tomu|slovo|slovu|tomu slovu))?\s+["']?(\w[\w-]{2,})["']?/i,
+
+  // —— Česky — explicitní „přidej / zapiš / ulož" ——
+  /(?:přidej|pridej|zapiš|zapis|ulož|uloz|napiš|napis)(?:\s+(?:si|mi))?(?:\s+(?:slovo|to slovo))?\s+["']?(\w[\w-]{2,})["']?(?:\s+(?:do (?:slovníku|slovniku|slovníčku|slovnicku)|do mého slovníku))?/i,
+
+  // —— Česky — „do slovníku / do slovníčku X" (i obrácené pořadí) ——
+  /(?:slovník|slovnik|slovníček|slovnicek|do slovníku|do slovniku|do slovníčku|do slovnicku)\s+["']?(\w[\w-]{2,})["']?/i,
+
+  // —— Česky — „slovo X do slovníku" ——
+  /slovo\s+["']?(\w[\w-]{2,})["']?\s+do\s+(?:slovníku|slovniku|slovníčku|slovnicku)/i,
+
+  // —— Uvozovkové uvedení („X" co to znamená) ——
+  /["'](\w[\w-]{2,})["']\s*(?:co to|what does|what is)/i,
 ];
+
+// Blacklist — krátká / běžná česká slova, která se NESMÍ přidat jako "english vocab"
+const TRIGGER_BLACKLIST = new Set([
+  'ten', 'ta', 'to', 'tu', 'co', 'je', 'si', 'mi', 'do', 'pro', 'tak', 'jak', 'kdy',
+  'kde', 'koho', 'cemu', 'cim', 'cim', 'koho', 'cele', 'celé', 'cela', 'celá',
+  'slovo', 'slova', 'mas', 'mam', 'jsem', 'jsi', 'byl', 'byla', 'bylo', 'mel', 'mela',
+  'have', 'has', 'the', 'and', 'but', 'for', 'you', 'are', 'was', 'not', 'with',
+]);
 
 const migrateEntry = (raw: any): VocabularyEntry | null => {
   if (!raw || typeof raw !== 'object') return null;
@@ -108,12 +137,19 @@ export const addVocabularyWordWithDefinition = async (
 export const extractVocabFromTranscript = (transcript: string): string[] => {
   const words: string[] = [];
   for (const pattern of VOCAB_PATTERNS) {
-    const match = pattern.exec(transcript);
-    if (match?.[1]) {
-      words.push(match[1]);
+    // Použijeme globální variantu pro vícenásobné match v jednom přepisu
+    const globalPattern = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g');
+    let m: RegExpExecArray | null;
+    while ((m = globalPattern.exec(transcript)) !== null) {
+      const w = m[1];
+      if (!w) continue;
+      const lower = w.toLowerCase();
+      if (lower.length < 3) continue;
+      if (TRIGGER_BLACKLIST.has(lower)) continue;
+      words.push(w);
     }
   }
-  return [...new Set(words)];
+  return [...new Set(words.map(w => w.toLowerCase()))];
 };
 
 // ─── Recall mode helpers ─────────────────────────────────────────────

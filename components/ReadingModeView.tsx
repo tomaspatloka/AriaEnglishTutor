@@ -30,6 +30,16 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
   const quickAddInputRef = useRef<HTMLInputElement>(null);
   const quickAddPopupRef = useRef<HTMLDivElement>(null);
 
+  // v1.7.1 — Toast po auto-detekci slova z hlasu (FIFO, max 1 viditelný)
+  const [addedToast, setAddedToast] = useState<{ word: string; ts: number } | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
+  const showAddedToast = (word: string) => {
+    setAddedToast({ word, ts: Date.now() });
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = window.setTimeout(() => setAddedToast(null), 2800);
+  };
+  useEffect(() => () => { if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current); }, []);
+
   const {
     connect,
     disconnect,
@@ -120,12 +130,24 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
     const detected = extractVocabFromTranscript(newText);
     if (detected.length === 0) return;
 
+    // Filtruj na opravdu NOVÁ slova (ne ta, co už ve slovníčku jsou) — abychom neukazovali toast pro duplicit
+    const existingLower = new Set(vocabList.map(e => e.word.toLowerCase()));
+    const trulyNew = detected.filter(w => !existingLower.has(w.toLowerCase()));
+
     for (const word of detected) {
       addVocabularyWordWithDefinition(
         word,
         () => translateWord(word),
         onVocabChange
       );
+    }
+
+    if (trulyNew.length > 0) {
+      // Pokud chytlo víc najednou, zobrazíme „rope +2" formát; jinak jen slovo
+      const display = trulyNew.length === 1
+        ? trulyNew[0]
+        : `${trulyNew[0]} +${trulyNew.length - 1}`;
+      showAddedToast(display);
     }
   }, [inputTranscript]);
 
@@ -452,6 +474,19 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
         onClose={() => setShowPhotoSheet(false)}
         onTextExtracted={setReferenceText}
       />
+
+      {/* Toast: voice-detected slovo přidáno */}
+      {addedToast && (
+        <div
+          key={addedToast.ts}
+          className="absolute left-1/2 -translate-x-1/2 bottom-[88px] z-40 bg-emerald-500/95 text-white text-xs font-bold rounded-full px-4 py-2 shadow-xl border border-emerald-300/40 flex items-center gap-2"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="text-base">✓</span>
+          <span>Přidáno do slovníčku: <span className="font-black">{addedToast.word}</span></span>
+        </div>
+      )}
 
       {/* F4 — Vocabulary bar (defaultně skrývá mastered) */}
       <div className="shrink-0 bg-slate-900/80 border-t border-white/10 px-4 py-2.5 z-10 relative">
