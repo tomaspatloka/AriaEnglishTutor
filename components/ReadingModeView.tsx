@@ -3,6 +3,7 @@ import { AppSettings, VocabularyEntry, Message } from '../types';
 import { useLiveAPI } from '../hooks/useLiveAPI';
 import { addVocabularyWordWithDefinition, extractVocabFromTranscript } from '../utils/vocabularyUtils';
 import { translateWord } from '../services/geminiService';
+import PhotoCaptureSheet from './PhotoCaptureSheet';
 
 interface ReadingModeViewProps {
   settings: AppSettings;
@@ -19,6 +20,10 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
   const [correctionLanguage, setCorrectionLanguage] = useState<'cs' | 'en'>('cs');
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // v1.6 — Photo capture: referenční text z fotky stránky
+  const [referenceText, setReferenceText] = useState<string | null>(null);
+  const [showPhotoSheet, setShowPhotoSheet] = useState(false);
+
   const {
     connect,
     disconnect,
@@ -34,7 +39,7 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
     outputTranscript,
     inputTranscript,
     conversationLog,
-  } = useLiveAPI(settings, correctionLanguage);
+  } = useLiveAPI(settings, correctionLanguage, referenceText);
 
   const processedInputLengthRef = useRef(0);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
@@ -204,6 +209,17 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
             )}
           </div>
 
+          {/* v1.6 — Photo capture button. Disabled while connected (matches correctionLanguage UX). */}
+          <button
+            onClick={() => setShowPhotoSheet(true)}
+            disabled={isConnected || isConnecting}
+            aria-label="Vyfotit stránku"
+            title={(isConnected || isConnecting) ? 'Nejprve ukonči poslech' : 'Vyfotit stránku'}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/10 transition text-lg leading-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-white/60"
+          >
+            📷
+          </button>
+
           <button
             onClick={handleExit}
             className="px-3 py-1.5 bg-white/10 text-white/70 text-xs font-bold rounded-full hover:bg-white/20 transition active:scale-95"
@@ -212,6 +228,26 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
           </button>
         </div>
       </div>
+
+      {/* v1.6 — PŘEDLOHA z fotky */}
+      {referenceText && (
+        <div className="mx-4 mb-2 bg-slate-800/80 border border-blue-400/20 rounded-xl p-3 z-10 relative">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-[10px] font-black uppercase tracking-[0.15em] text-blue-400">📖 Předloha z fotky</span>
+            <button
+              onClick={() => setReferenceText(null)}
+              disabled={isConnected || isConnecting}
+              className="text-[10px] font-bold text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={(isConnected || isConnecting) ? 'Nejprve ukonči poslech' : 'Smazat předlohu'}
+            >
+              Smazat
+            </button>
+          </div>
+          <div className="text-xs text-slate-300 whitespace-pre-wrap max-h-32 overflow-y-auto no-scrollbar">
+            {referenceText}
+          </div>
+        </div>
+      )}
 
       {/* Waveform / status area */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 gap-5 z-10 relative min-h-0">
@@ -364,6 +400,13 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
           </div>
         )}
       </div>
+
+      {/* v1.6 — Photo capture modal */}
+      <PhotoCaptureSheet
+        open={showPhotoSheet}
+        onClose={() => setShowPhotoSheet(false)}
+        onTextExtracted={setReferenceText}
+      />
 
       {/* F4 — Redesigned vocabulary bar */}
       <div className="shrink-0 bg-slate-900/80 border-t border-white/10 px-4 py-2.5 z-10 relative">
