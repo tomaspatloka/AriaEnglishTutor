@@ -39,6 +39,7 @@ export interface AppSettings {
   
   interactionMode: InteractionMode; // Switch between Gemini 2.5 Live and Classic STT/TTS
   activeScenario: string | null; // Scenario ID or null for free conversation
+  speechRate: number; // Aria speaking rate, client-side playbackRate. 0.5–1.5, 1.0 = normal
 }
 
 export interface SessionSummary {

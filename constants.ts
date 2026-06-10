@@ -1,5 +1,18 @@
-export const APP_VERSION = "v1.7.1";
+export const APP_VERSION = "v1.8.0";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.8.0",
+    date: "2026-06-10",
+    title: "Speaking: pauza Arie + nastavitelná rychlost mluvení",
+    changes: [
+      "Nové tlačítko Pauza/Pokračovat ve Speaking módu (Gemini Live) — pozastaví Ariino mluvení uprostřed věty přes AudioContext.suspend() a po dalším stisku plynule naváže přesně tam, kde skončila.",
+      "Pauza zároveň ztiší mikrofon, takže konverzace opravdu 'stojí' a po stisku pokračuje.",
+      "Status indikátor a popisek ukazují stav 'Pozastaveno' / 'Aria pozastavena'.",
+      "Nastavení → Rychlost mluvení: slider 50–150 % (default 100 %). Pomalejší tempo pro lepší srozumitelnost při výuce.",
+      "Rychlost se aplikuje client-side (Gemini Live API server-side rychlost nepodporuje) a projeví se okamžitě bez nutnosti reconnectu.",
+      "Pozn.: výrazně pomalejší tempo zní mírně hlouběji (mění se i výška hlasu).",
+    ],
+  },
   {
     version: "v1.7.1",
     date: "2026-05-28",

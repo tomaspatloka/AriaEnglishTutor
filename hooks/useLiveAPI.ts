@@ -50,6 +50,13 @@ export const useLiveAPI = (
   const isPausedRef = useRef(false);
   const [isPaused, setIsPaused] = useState(false);
 
+  // Rychlost mluvení Arie — client-side playbackRate (Live API nepodporuje server-side rate).
+  // Čteno přes ref v onmessage, aby změna slideru zabrala bez reconnectu.
+  const speechRateRef = useRef(settings.speechRate ?? 1.0);
+  useEffect(() => {
+    speechRateRef.current = settings.speechRate ?? 1.0;
+  }, [settings.speechRate]);
+
   // Refs pro správu session
   const sessionPromiseRef = useRef<Promise<any> | null>(null);
   const currentSessionRef = useRef<any>(null);
@@ -343,6 +350,12 @@ export const useLiveAPI = (
                 source.buffer = buffer;
                 source.connect(ctx.destination);
 
+                // Rychlost mluvení — JEDEN read ref per buffer (advisor #1):
+                // stejná hodnota pro playbackRate i pro výpočet nextStartTime,
+                // jinak by se buffery při pohybu slideru rozjely (drift/mezery).
+                const rate = speechRateRef.current;
+                source.playbackRate.value = rate;
+
                 // Plánování přehrávání bez mezer (gapless)
                 const currentTime = ctx.currentTime;
                 if (nextStartTimeRef.current < currentTime) {
@@ -350,7 +363,8 @@ export const useLiveAPI = (
                 }
 
                 source.start(nextStartTimeRef.current);
-                nextStartTimeRef.current += buffer.duration;
+                // Při rate < 1 trvá buffer déle (duration/rate), při rate > 1 kratší.
+                nextStartTimeRef.current += buffer.duration / rate;
 
                 audioSourcesRef.current.add(source);
                 setIsSpeaking(true);
@@ -446,14 +460,36 @@ export const useLiveAPI = (
   }, [cleanup]);
 
   const pause = useCallback(() => {
+    // Guard: ignoruj, pokud už pauznuto (chrání před rychlým double-tapem, advisor #5)
+    if (isPausedRef.current) return;
     isPausedRef.current = true;
     setIsPaused(true);
     setVolumeLevel(0);
+    // Zmraz output AudioContext → Aria okamžitě ztichne uprostřed věty.
+    // suspend() zastaví hodiny kontextu, naplánované buffery se obnoví přesně tam, kde stály.
+    const ctx = audioContextRef.current;
+    if (ctx && ctx.state === 'running') {
+      ctx.suspend().catch(() => { /* context se zavírá/zavřel — bezpečně ignorovat */ });
+    }
   }, []);
 
   const resume = useCallback(() => {
+    if (!isPausedRef.current) return;
     isPausedRef.current = false;
     setIsPaused(false);
+    const ctx = audioContextRef.current;
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume()
+        .then(() => {
+          // Po dlouhé pauze mohou být buffery naplánované "do minulosti" vůči
+          // rozmrzlému currentTime → flushnuly by se naráz. Zarovnáme plánovač
+          // na aktuální čas, aby další audio navázalo plynule (Forge/advisor #4).
+          if (nextStartTimeRef.current < ctx.currentTime) {
+            nextStartTimeRef.current = ctx.currentTime;
+          }
+        })
+        .catch(() => { /* context se zavírá/zavřel — bezpečně ignorovat */ });
+    }
   }, []);
 
   return {

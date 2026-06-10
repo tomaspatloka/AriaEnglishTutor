@@ -40,6 +40,9 @@ const AvatarView: React.FC<AvatarViewProps> = ({
   const {
     connect,
     disconnect,
+    pause: livePause,
+    resume: liveResume,
+    isPaused: liveIsPaused,
     isConnected: liveIsConnected,
     isConnecting: liveIsConnecting,
     isSpeaking: liveIsSpeaking,
@@ -112,6 +115,16 @@ const AvatarView: React.FC<AvatarViewProps> = ({
     setCzechTranslation('');
   }, [restartToken, isLiveMode, liveIsConnected, liveIsConnecting, legacyIsListening, disconnect, legacyToggleListening]);
 
+
+  // Pause/Resume Ariina mluvení (jen Live mode) — suspend/resume output AudioContextu
+  const showPauseButton = isLiveMode && liveIsConnected;
+  const handlePauseToggle = () => {
+    if (liveIsPaused) {
+      liveResume();
+    } else {
+      livePause();
+    }
+  };
 
   // 5. Unified Toggle Handler
   const handleToggle = () => {
@@ -308,6 +321,10 @@ const AvatarView: React.FC<AvatarViewProps> = ({
                 <span className="text-amber-300 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></span> Connecting...
                 </span>
+             ) : isLiveMode && liveIsPaused ? (
+                <span className="text-amber-300 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-amber-400 rounded-full"></span> Pozastaveno
+                </span>
              ) : activeIsSpeaking ? (
                 <span className="text-emerald-400 flex items-center gap-2">
                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Aria Speaking
@@ -374,8 +391,32 @@ const AvatarView: React.FC<AvatarViewProps> = ({
               </div>
          </div>
 
-        {/* Mic Button */}
+        {/* Mic Button + Pause Button */}
         <div className="flex flex-col items-center gap-3">
+          <div className="flex items-center gap-5">
+            {/* Pause / Resume Aria speaking (Live mode only) */}
+            {showPauseButton && (
+              <button
+                onClick={handlePauseToggle}
+                aria-label={liveIsPaused ? 'Resume Aria' : 'Pause Aria'}
+                className={`w-16 h-16 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(0,0,0,0.5)] transition-all transform hover:scale-105 active:scale-90 border-4 ${
+                  liveIsPaused
+                    ? 'bg-amber-500 border-amber-400 text-white shadow-amber-500/20 animate-pulse-slow'
+                    : 'bg-slate-700 border-slate-600 text-white hover:bg-slate-600'
+                }`}
+              >
+                {liveIsPaused ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7">
+                    <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7">
+                    <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
+            )}
+
             <button
                 onClick={handleToggle}
                 className={`w-24 h-24 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.6)] transition-all transform hover:scale-105 active:scale-90 border-[6px] ${
@@ -397,9 +438,10 @@ const AvatarView: React.FC<AvatarViewProps> = ({
                 </svg>
                 )}
             </button>
-            
+          </div>
+
             <div className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">
-                {isLiveMode && liveIsConnecting ? "Cancel" : activeIsListening ? "End Call" : `Start ${isLiveMode ? 'Live' : 'Chat'}`}
+                {isLiveMode && liveIsConnecting ? "Cancel" : liveIsPaused ? "Aria pozastavena" : activeIsListening ? "End Call" : `Start ${isLiveMode ? 'Live' : 'Chat'}`}
             </div>
         </div>
       </div>

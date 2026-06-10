@@ -33,6 +33,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   customAvatarImageUrl: null,
   interactionMode: 'live-api',
   activeScenario: null,
+  speechRate: 1.0,
 };
 
 // Simple ID generator

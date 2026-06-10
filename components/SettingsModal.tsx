@@ -44,6 +44,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentS
     return "Drill — každou chybu!";
   };
 
+  const getRateLabel = (val: number) => {
+    if (val <= 0.6) return "Hodně pomalu";
+    if (val < 0.95) return "Pomaleji";
+    if (val <= 1.05) return "Normálně";
+    if (val < 1.4) return "Rychleji";
+    return "Hodně rychle";
+  };
+
   const handleAvatarSelect = (type: AvatarType) => {
     if (isBlobUrl(settings.customAvatarImageUrl) && settings.customAvatarImageUrl !== currentSettings.customAvatarImageUrl) {
       URL.revokeObjectURL(settings.customAvatarImageUrl);
@@ -268,6 +276,31 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentS
               <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">{getStrictnessLabel(settings.correctionStrictness)}</span>
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Strict</span>
             </div>
+          </section>
+
+          <section>
+            <div className="flex justify-between items-end mb-3 px-1">
+              <label className="block text-sm font-black text-gray-800 uppercase tracking-wider">
+                Speech Rate / Rychlost mluvení
+              </label>
+              <span className="text-emerald-600 font-black text-2xl leading-none">{Math.round((settings.speechRate ?? 1) * 100)}%</span>
+            </div>
+            <input
+              type="range" min="0.5" max="1.5" step="0.05"
+              value={settings.speechRate ?? 1}
+              onChange={(e) => setSettings({ ...settings, speechRate: parseFloat(e.target.value) })}
+              className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+            />
+            <div className="flex justify-between mt-2 px-1">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pomalu</span>
+              <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
+                {getRateLabel(settings.speechRate ?? 1)}
+              </span>
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Rychle</span>
+            </div>
+            <p className="text-[10px] text-gray-400 mt-2 px-1 italic">
+              Platí pro Gemini Live mód. Pomalejší = srozumitelnější výuka (hlas zní mírně hlouběji).
+            </p>
           </section>
 
           <hr className="border-gray-100" />
