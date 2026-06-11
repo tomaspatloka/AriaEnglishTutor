@@ -1,5 +1,16 @@
-export const APP_VERSION = "v1.8.0";
+export const APP_VERSION = "v1.8.1";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.8.1",
+    date: "2026-06-11",
+    title: "Stabilita: opravy z hloubkového auditu (P1)",
+    changes: [
+      "ErrorBoundary: render chyba už neshodí appku do bílé obrazovky — zobrazí čitelný fallback s tlačítkem 'Načíst znovu' a data zůstanou uložená.",
+      "Odolnost úložiště: čtení/zápis nastavení, historie lekcí a denního usage je nově chráněné proti poškozeným datům i plné/nedostupné localStorage (privátní režim) — appka nespadne.",
+      "VirtualAvatar: ošetřené časovače animace (mrkání + pohyb úst) se při zavření správně uklízí, žádné updaty po odmountování.",
+      "Úklid: odstraněné ladicí výpisy z produkční konzole (Gemini Live).",
+    ],
+  },
   {
     version: "v1.8.0",
     date: "2026-06-10",
