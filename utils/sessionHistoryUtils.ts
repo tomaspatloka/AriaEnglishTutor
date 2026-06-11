@@ -12,16 +12,16 @@ const toDayStart = (timestamp: number) => {
 };
 
 export const loadLessonHistory = (): LessonHistoryEntry[] => {
-  const raw = localStorage.getItem(HISTORY_KEY);
-  if (!raw) return [];
-
   try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
     const parsed = JSON.parse(raw) as LessonHistoryEntry[];
     if (!Array.isArray(parsed)) return [];
     return parsed
       .filter(item => item && typeof item.endedAt === 'number')
       .sort((a, b) => b.endedAt - a.endedAt);
   } catch (error) {
+    // Poškozená data nebo nedostupné úložiště → prázdná historie.
     console.error('Failed to parse lesson history', error);
     return [];
   }
@@ -31,7 +31,12 @@ export const saveLessonHistory = (history: LessonHistoryEntry[]) => {
   const normalized = [...history]
     .sort((a, b) => b.endedAt - a.endedAt)
     .slice(0, MAX_HISTORY_ITEMS);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(normalized));
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(normalized));
+  } catch (error) {
+    // Plná kvóta nebo nedostupné úložiště — historie se neuloží.
+    console.error('Failed to save lesson history', error);
+  }
   return normalized;
 };
 
