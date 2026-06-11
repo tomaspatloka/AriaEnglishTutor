@@ -13,27 +13,43 @@ interface DailyUsage {
 
 const getToday = () => new Date().toISOString().split('T')[0];
 
+const isValidUsage = (value: any): value is DailyUsage =>
+    !!value && typeof value.count === 'number' && typeof value.date === 'string';
+
+// Bezpečný zápis — privátní režim / plná kvóta nesmí shodit aplikaci.
+const safeSet = (usage: DailyUsage): void => {
+    try {
+        localStorage.setItem(USAGE_KEY, JSON.stringify(usage));
+    } catch {
+        // localStorage nedostupné nebo plné — usage se prostě neuloží.
+    }
+};
+
 export const getUsage = (): DailyUsage => {
-    const stored = localStorage.getItem(USAGE_KEY);
     const today = getToday();
 
-    if (stored) {
-        const usage: DailyUsage = JSON.parse(stored);
-        if (usage.date === today) {
-            return usage;
+    try {
+        const stored = localStorage.getItem(USAGE_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (isValidUsage(parsed) && parsed.date === today) {
+                return parsed;
+            }
         }
+    } catch {
+        // Poškozená data nebo nedostupné úložiště — spadneme na reset níže.
     }
 
-    // If no usage found or older date, reset
+    // Nenalezeno, poškozeno, nebo starší datum → reset.
     const newUsage = { count: 0, date: today };
-    localStorage.setItem(USAGE_KEY, JSON.stringify(newUsage));
+    safeSet(newUsage);
     return newUsage;
 };
 
 export const incrementUsage = (): DailyUsage => {
     const usage = getUsage();
     usage.count += 1;
-    localStorage.setItem(USAGE_KEY, JSON.stringify(usage));
+    safeSet(usage);
 
     // Dispatch a custom event so the UI can update immediately
     window.dispatchEvent(new CustomEvent('aria-usage-updated', { detail: usage }));
