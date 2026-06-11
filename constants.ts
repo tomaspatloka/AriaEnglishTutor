@@ -9,6 +9,7 @@ export const RELEASE_HISTORY = [
       "Odolnost úložiště: čtení/zápis nastavení, historie lekcí a denního usage je nově chráněné proti poškozeným datům i plné/nedostupné localStorage (privátní režim) — appka nespadne.",
       "VirtualAvatar: ošetřené časovače animace (mrkání + pohyb úst) se při zavření správně uklízí, žádné updaty po odmountování.",
       "Úklid: odstraněné ladicí výpisy z produkční konzole (Gemini Live).",
+      "Rychlejší opětovné načítání: knihovny (React, Gemini SDK) jsou rozdělené do samostatných cacheovatelných částí — prohlížeč je při další návštěvě nestahuje znovu.",
     ],
   },
   {
