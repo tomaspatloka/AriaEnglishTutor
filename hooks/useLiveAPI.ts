@@ -251,7 +251,6 @@ export const useLiveAPI = (
             setNetworkSlow(false);
             lastServerActivityRef.current = Date.now();
             incrementUsage();
-            console.log("Gemini Live Connected 🟢");
 
             // --- Nastavení Audio Input Pipeline ---
             // Musíme vytvořit separátní kontext pro vstup, abychom vynutili 16kHz
@@ -382,7 +381,6 @@ export const useLiveAPI = (
             // Pokud model detekuje, že uživatel mluví, pošle interrupted: true.
             // My musíme okamžitě přestat přehrávat audio, aby to působilo přirozeně.
             if (serverContent?.interrupted) {
-              console.log("Interrupted by user! 🛑");
               audioSourcesRef.current.forEach(s => {
                 try { s.stop(); } catch (e) { }
               });
@@ -393,7 +391,6 @@ export const useLiveAPI = (
           },
           onclose: () => {
             if (connectionId !== activeConnectionIdRef.current) return;
-            console.log("Gemini Live Closed");
             const wasManualDisconnect = manualDisconnectRef.current;
             manualDisconnectRef.current = false;
             setIsConnecting(false);
