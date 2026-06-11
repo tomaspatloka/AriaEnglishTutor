@@ -20,6 +20,18 @@ export default defineConfig(({ mode }) => {
       'process.env.API_KEY': JSON.stringify(apiKey),
       'process.env.GEMINI_API_KEY': JSON.stringify(apiKey)
     },
+    build: {
+      rollupOptions: {
+        output: {
+          // Vendor splitting — React i GenAI SDK do vlastních chunků,
+          // mění se zřídka → lepší cache, paralelní stažení, menší hlavní chunk.
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom'],
+            'genai-vendor': ['@google/genai'],
+          },
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
