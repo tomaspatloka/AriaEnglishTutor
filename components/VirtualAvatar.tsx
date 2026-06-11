@@ -12,23 +12,28 @@ const VirtualAvatar: React.FC<VirtualAvatarProps> = ({ gender, isSpeaking, isLis
 
   // Blinking logic
   useEffect(() => {
+    let blinkOffTimer: ReturnType<typeof setTimeout> | undefined;
     const blinkInterval = setInterval(() => {
       setBlink(true);
-      setTimeout(() => setBlink(false), 200);
+      blinkOffTimer = setTimeout(() => setBlink(false), 200);
     }, 4000); // Blink every 4 seconds
-    return () => clearInterval(blinkInterval);
+    return () => {
+      clearInterval(blinkInterval);
+      if (blinkOffTimer) clearTimeout(blinkOffTimer);
+    };
   }, []);
 
   // Speaking mouth movement logic
   useEffect(() => {
     let animationFrame: number;
+    let mouthTimer: ReturnType<typeof setTimeout> | undefined;
     const animateMouth = () => {
       if (isSpeaking) {
         // Random aperture logic to simulate talking
         const openAmount = 3 + Math.random() * 12;
         setMouthOpen(openAmount);
         // Vary speed slightly
-        animationFrame = requestAnimationFrame(() => setTimeout(animateMouth, 100));
+        animationFrame = requestAnimationFrame(() => { mouthTimer = setTimeout(animateMouth, 100); });
       } else {
         setMouthOpen(0);
       }
@@ -40,7 +45,10 @@ const VirtualAvatar: React.FC<VirtualAvatarProps> = ({ gender, isSpeaking, isLis
       setMouthOpen(0);
     }
 
-    return () => cancelAnimationFrame(animationFrame);
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      if (mouthTimer) clearTimeout(mouthTimer);
+    };
   }, [isSpeaking]);
 
   // Colors
