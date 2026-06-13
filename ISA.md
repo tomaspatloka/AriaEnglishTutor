@@ -4,8 +4,8 @@ slug: 20260613-aria-blueprint-v1110
 project: AriaEnglishTutor
 effort: E3
 effort_source: classifier
-phase: observe
-progress: 0/18
+phase: complete
+progress: 18/18
 mode: interactive
 started: 2026-06-13T00:00:00Z
 updated: 2026-06-13T00:00:00Z
@@ -47,28 +47,28 @@ C2, diakritika, header ikony, CS stavové texty) do release v1.11.0 s čistým t
 ## Criteria
 
 ### P2-14 — Přepisy lekcí + prohlížení
-- [ ] ISC-1: NOVÝ `utils/transcriptUtils.ts` ring buffer (`aria_transcripts_v1`, max 10, slice(-50))
-- [ ] ISC-2: `StoredTranscript` typ (id, endedAt, mode, messages)
-- [ ] ISC-3: save přes try/catch; QuotaExceeded → evict nejstarší + retry 1×; pak skip
-- [ ] ISC-4: `App.tsx` oba finalizery ukládají přepis po session
-- [ ] ISC-5: `ProgressModal` detail lekce rozbalí přepis přes `<details>`
-- [ ] ISC-6: Anti: 11. session vytlačí nejstarší (ring buffer drží max 10)
+- [x] ISC-1: NOVÝ `utils/transcriptUtils.ts` ring buffer (`aria_transcripts_v1`, max 10, slice(-50))
+- [x] ISC-2: `StoredTranscript` typ (id, endedAt, mode, messages)
+- [x] ISC-3: save přes try/catch; QuotaExceeded → evict nejstarší + retry 1×; pak skip
+- [x] ISC-4: `App.tsx` oba finalizery ukládají přepis po session
+- [x] ISC-5: `ProgressModal` detail lekce rozbalí přepis přes `<details>`
+- [x] ISC-6: Anti: 11. session vytlačí nejstarší (ring buffer drží max 10)
 
 ### P2-15 — UI konzistence
-- [ ] ISC-7: `LevelSelector` přidá C2 (sync se SettingsModal levels)
-- [ ] ISC-8: `ProgressModal` diakritika — Zlepšení, Zhoršení, Stabilní, Nedostatek dat
-- [ ] ISC-9: `ProgressModal` Čas mluvení, dnů, Poslední lekce, Session shrnutí
-- [ ] ISC-10: `AvatarView` stavové texty česky („Klepni na mikrofon a začni")
-- [ ] ISC-11: „Paused (Live/Std)" → „Připraveno (Live/Std)" (kolize se skutečnou pauzou)
-- [ ] ISC-12: Anti: anglický učební obsah (transcript, correction) zůstává anglicky
+- [x] ISC-7: `LevelSelector` přidá C2 (sync se SettingsModal levels)
+- [x] ISC-8: `ProgressModal` diakritika — Zlepšení, Zhoršení, Stabilní, Nedostatek dat
+- [x] ISC-9: `ProgressModal` Čas mluvení, dnů, Poslední lekce, Session shrnutí
+- [x] ISC-10: `AvatarView` stavové texty česky („Klepni na mikrofon a začni")
+- [x] ISC-11: „Paused (Live/Std)" → „Připraveno (Live/Std)" (kolize se skutečnou pauzou)
+- [x] ISC-12: Anti: anglický učební obsah (transcript, correction) zůstává anglicky
 
 ### Global
-- [ ] ISC-13: `APP_VERSION` = v1.11.0 + RELEASE_HISTORY (česky), package.json 1.11.0
-- [ ] ISC-14: `tsc --noEmit` 0 + `bun run build` OK po každé položce
-- [ ] ISC-15: Anti: žádná regrese existujících přepisů/historie z v1.10.0
-- [ ] ISC-16: ring buffer save nehodí výjimku ven (graceful při plné kvótě)
-- [ ] ISC-17: ProgressModal `<details>` se renderuje jen když přepis existuje
-- [ ] ISC-18: transcriptUtils load přes try/catch + shape-validace (poškozená data → [])
+- [x] ISC-13: `APP_VERSION` = v1.11.0 + RELEASE_HISTORY (česky), package.json 1.11.0
+- [x] ISC-14: `tsc --noEmit` 0 + `bun run build` OK po každé položce
+- [x] ISC-15: Anti: žádná regrese existujících přepisů/historie z v1.10.0
+- [x] ISC-16: ring buffer save nehodí výjimku ven (graceful při plné kvótě)
+- [x] ISC-17: ProgressModal `<details>` se renderuje jen když přepis existuje
+- [x] ISC-18: transcriptUtils load přes try/catch + shape-validace (poškozená data → [])
 
 ## Test Strategy
 
@@ -104,8 +104,24 @@ C2, diakritika, header ikony, CS stavové texty) do release v1.11.0 s čistým t
 
 ## Changelog
 
-(LEARN)
+- **conjectured:** ring buffer přepisů a dedup podle id zvládne i opakované uložení a kvótu.
+  **refuted_by:** nic — držela; unit test 7/7 (cap 10, evict, slice 50, id-dedup, poškozená data → []).
+  **learned:** QuotaExceeded řeším evict-loop + persist retry, ne výjimkou ven; gotcha o českých
+  uvozovkách z v1.10.0 aplikována na release notes → tsc čistý napoprvé.
+  **criterion_now:** ISC-1/3/16/18 ověřeny unit testem nad mock localStorage.
 
 ## Verification
 
-(EXECUTE/VERIFY)
+- ISC-1,2,3,16,18: **Unit test 7/7** — cap 10, nejnovější první, evict nejstarších, slice(-50), id-dedup, poškozená data → []; save bez výjimky (evict-loop).
+- ISC-4: Read — oba finalizery `saveTranscript({ id: entry.id, ... })` spárováno s lekcí.
+- ISC-5,17: Read — ProgressModal `getTranscript(item.id)` → `<details>` jen když přepis existuje.
+- ISC-6: Unit — 12 sessions → buffer drží 10, s0/s1 vytlačeny.
+- ISC-7: Grep — LevelSelector `C2 - Proficient` (sync se SettingsModal levels A1–C2).
+- ISC-8,9: Grep — trendLabel Zlepšení/Zhoršení/Stabilní; Čas mluvení, dnů, Poslední lekce, Shrnutí po hovoru, Délka, Mluvení.
+- ISC-10,11,12: Read — AvatarView CS („Klepni na mikrofon a začni", „Aria mluví…", „Poslouchám…"), Paused→Připraveno; učební obsah (transcript/correction parse) zůstává EN.
+- ISC-13: Grep — v1.11.0 v constants + bundlu; package.json 1.11.0.
+- ISC-14: Bash — tsc 0 + build OK po každé položce.
+
+**Doctrine:** Rule 1 — UI ISC browser-DEFERRED (WSL), kód+build+unit verified; Tomův live smoke pro vizuál. Rule 2 — malý polish řez, advisor neopakován (předchozí dva běhy potvrdily přístup; žádný nový rizikový vzor). Rule 2a (Cato) — E3, neaplikuje se.
+
+**Celý blueprint hotov:** v1.9.0 (P0×7, 44 ISC) + v1.10.0 (P1×7, 38 ISC) + v1.11.0 (P2×2, 18 ISC) = 100 ISC, 3 release. Vynecháno jen P2-16 (API klíč) dle Tomova pokynu.
