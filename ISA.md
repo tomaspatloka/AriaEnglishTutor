@@ -4,8 +4,8 @@ slug: 20260613-aria-blueprint-v190
 project: AriaEnglishTutor
 effort: E3
 effort_source: classifier
-phase: execute
-progress: 18/44
+phase: complete
+progress: 44/44
 mode: interactive
 started: 2026-06-13T00:00:00Z
 updated: 2026-06-13T00:00:00Z
@@ -64,64 +64,64 @@ poctivě měří reading, neztrácí session, propisuje TEST_ME verdikt a zobraz
 ## Criteria
 
 ### P0-5 — Poctivá metrika mluvení
-- [ ] ISC-1: `App.tsx` `voiceActive` NEobsahuje `liveRuntimeState.isSpeaking` (čas Arie se nepočítá)
-- [ ] ISC-2: useEffect dependency array pro voiceActive už nemá `liveRuntimeState.isSpeaking`
-- [ ] ISC-3: `ReadingModeView` měří vlastní `userTalkingMs` přes ref (akumulace kdy `isUserTalking`)
-- [ ] ISC-4: `onExit`/session objekt nese `userTalkingMs: number`
-- [ ] ISC-5: `finalizeReadingSession` použije `session.userTalkingMs` pro `speakingMs` (ne `durationMs`)
+- [x] ISC-1: `App.tsx` `voiceActive` NEobsahuje `liveRuntimeState.isSpeaking` (čas Arie se nepočítá)
+- [x] ISC-2: useEffect dependency array pro voiceActive už nemá `liveRuntimeState.isSpeaking`
+- [x] ISC-3: `ReadingModeView` měří vlastní `userTalkingMs` přes ref (akumulace kdy `isUserTalking`)
+- [x] ISC-4: `onExit`/session objekt nese `userTalkingMs: number`
+- [x] ISC-5: `finalizeReadingSession` použije `session.userTalkingMs` pro `speakingMs` (ne `durationMs`)
 
 ### P0-6 — Exit z Reading přes header neztrácí session
-- [ ] ISC-6: `ReadingModeView` má prop `onSessionUpdate(session)` a hlásí průběžně přes useEffect
-- [ ] ISC-7: `App.tsx` drží `readingSessionRef` aktualizovaný z `onSessionUpdate`
-- [ ] ISC-8: header `exitReadingMode()` použije `readingSessionRef.current` (ne MouseEvent argument)
-- [ ] ISC-9: Anti: „← Zpět" cesta i header 📚 cesta obě vedou na finalizaci se stejnými daty
+- [x] ISC-6: `ReadingModeView` má prop `onSessionUpdate(session)` a hlásí průběžně přes useEffect
+- [x] ISC-7: `App.tsx` drží `readingSessionRef` aktualizovaný z `onSessionUpdate`
+- [x] ISC-8: header `exitReadingMode()` použije `readingSessionRef.current` (ne MouseEvent argument)
+- [x] ISC-9: Anti: „← Zpět" cesta i header 📚 cesta obě vedou na finalizaci se stejnými daty
 
 ### P0-7 — Output-forcing prompt (⚡reconnect)
-- [ ] ISC-10: `getSystemInstruction` Core Rules obsahuje „Turn economy" blok (krátké repliky, končit otázkou)
-- [ ] ISC-11: blok platí pro všechny levely i scénáře (je v base prompt, ne v conditionalu)
+- [x] ISC-10: `getSystemInstruction` Core Rules obsahuje „Turn economy" blok (krátké repliky, končit otázkou)
+- [x] ISC-11: blok platí pro všechny levely i scénáře (je v base prompt, ne v conditionalu)
 
 ### P0-2 — Recyklace slovíček do konverzace (⚡reconnect)
-- [ ] ISC-12: `vocabularyUtils.ts` exportuje `buildFocusWords(entries, max=5): string[]` (jen lemma)
-- [ ] ISC-13: `buildFocusWords` prioritizuje `learning` před `new`, slice max
-- [ ] ISC-14: `getSystemInstruction` má nový param `focusWords: string[]` + VOCABULARY RECYCLING blok
-- [ ] ISC-15: blok se vloží jen když `focusWords.length > 0` (token economy mimo prázdný stav)
-- [ ] ISC-16: `useLiveAPI.ts` spočítá focusWords z `loadVocabulary()` při connect a předá do getSystemInstruction
-- [ ] ISC-17: `geminiService.ts initializeChat` přijímá + předává focusWords (legacy cesta)
-- [ ] ISC-18: `App.tsx` legacy init předává focusWords do initializeChat
+- [x] ISC-12: `vocabularyUtils.ts` exportuje `buildFocusWords(entries, max=5): string[]` (jen lemma)
+- [x] ISC-13: `buildFocusWords` prioritizuje `learning` před `new`, slice max
+- [x] ISC-14: `getSystemInstruction` má nový param `focusWords: string[]` + VOCABULARY RECYCLING blok
+- [x] ISC-15: blok se vloží jen když `focusWords.length > 0` (token economy mimo prázdný stav)
+- [x] ISC-16: `useLiveAPI.ts` spočítá focusWords z `loadVocabulary()` při connect a předá do getSystemInstruction
+- [x] ISC-17: `geminiService.ts initializeChat` přijímá + předává focusWords (legacy cesta)
+- [x] ISC-18: `App.tsx` legacy init předává focusWords do initializeChat
 
 ### P0-1 — Profil chyb → system prompt (⚡reconnect)
-- [ ] ISC-19: NOVÝ `utils/learnerProfileUtils.ts` s `ERROR_TAGS` uzavřenou taxonomií (12 tagů)
-- [ ] ISC-20: `LearnerProfile`/`LearnerError` interface dle blueprintu §1, klíč `aria_learner_profile_v1`
-- [ ] ISC-21: `mergeSummaryIntoProfile(errorTags)` — exact-tag agregace, count++, example přepis
-- [ ] ISC-22: `getTopErrors(max=3)` — load → decay 30d wall-time → sort count desc → slice
-- [ ] ISC-23: load/save přes try/catch + shape-validace neznámého tagu → 'other'
-- [ ] ISC-24: `generateSessionSummary` prompt rozšířen o `errorTags` výčtem povolených tagů
-- [ ] ISC-25: `SessionSummary` typ má `errorTags?: { tag: string; example: string }[]`
-- [ ] ISC-26: parsing summary validuje tag proti taxonomii, neznámý → 'other', chybějící → []
-- [ ] ISC-27: `App.tsx` oba finalizery volají `mergeSummaryIntoProfile(summary.errorTags ?? [])`
-- [ ] ISC-28: `getSystemInstruction` param `recurringErrors: string[]` + WEAKNESSES blok
-- [ ] ISC-29: Anti: reading mód profil NEinjektuje (getReadingSystemInstruction beze změny)
+- [x] ISC-19: NOVÝ `utils/learnerProfileUtils.ts` s `ERROR_TAGS` uzavřenou taxonomií (12 tagů)
+- [x] ISC-20: `LearnerProfile`/`LearnerError` interface dle blueprintu §1, klíč `aria_learner_profile_v1`
+- [x] ISC-21: `mergeSummaryIntoProfile(errorTags)` — exact-tag agregace, count++, example přepis
+- [x] ISC-22: `getTopErrors(max=3)` — load → decay 30d wall-time → sort count desc → slice
+- [x] ISC-23: load/save přes try/catch + shape-validace neznámého tagu → 'other'
+- [x] ISC-24: `generateSessionSummary` prompt rozšířen o `errorTags` výčtem povolených tagů
+- [x] ISC-25: `SessionSummary` typ má `errorTags?: { tag: string; example: string }[]`
+- [x] ISC-26: parsing summary validuje tag proti taxonomii, neznámý → 'other', chybějící → []
+- [x] ISC-27: `App.tsx` oba finalizery volají `mergeSummaryIntoProfile(summary.errorTags ?? [])`
+- [x] ISC-28: `getSystemInstruction` param `recurringErrors: string[]` + WEAKNESSES blok
+- [x] ISC-29: Anti: reading mód profil NEinjektuje (getReadingSystemInstruction beze změny)
 
 ### P0-3 — TEST_ME zapisuje výsledek
-- [ ] ISC-30: NOVÝ `utils/levelUtils.ts` `extractLevelVerdict(text): EnglishLevel | null`
-- [ ] ISC-31: regex kotvený `/\bLEVEL:\s*(A1|A2|B1|B2|C1)\b/` (konverzační zmínka nespustí zápis)
-- [ ] ISC-32: `constants.ts` TEST_ME-only prompt blok s formátem `LEVEL: B1` na vlastním řádku
-- [ ] ISC-33: `App.tsx` extrakce běží jen když `settings.level === 'TEST_ME'` (guard)
-- [ ] ISC-34: verdikt → `setSettings + saveSettings({ level })` + toast + header přestane „Assessment"
-- [ ] ISC-35: Live cesta — useEffect nad model zprávami; Legacy cesta — po responseText v handleSend
+- [x] ISC-30: NOVÝ `utils/levelUtils.ts` `extractLevelVerdict(text): EnglishLevel | null`
+- [x] ISC-31: regex kotvený na celý řádek `/^LEVEL:\s*(A1|A2|B1|B2|C1)\s*$/m` (advisor fix — konverzační zmínka „you're close to B1" nespustí zápis; ověřeno 7/7 unit testem)
+- [x] ISC-32: `constants.ts` TEST_ME-only prompt blok s formátem `LEVEL: B1` na vlastním řádku
+- [x] ISC-33: `App.tsx` extrakce běží jen když `settings.level === 'TEST_ME'` (guard)
+- [x] ISC-34: verdikt → `setSettings + saveSettings({ level })` + toast + header přestane „Assessment"
+- [x] ISC-35: Live cesta — useEffect nad model zprávami; Legacy cesta — po responseText v handleSend
 
 ### P0-4 — Streak + denní cíl + „co dnes"
-- [ ] ISC-36: NOVÝ `utils/dailyGoalUtils.ts` `getTodayMinutes(history, liveMs)` + `getDailyGoal()`
-- [ ] ISC-37: klíč `aria_daily_goal_v1` default 10, `todayMinutes` se NEukládá (počítá z historie)
-- [ ] ISC-38: header chip `🔥 {streak} · {today}/{goal} min`, zezelená při splnění, klik → Progress
-- [ ] ISC-39: idle obrazovka (AvatarView disconnected) ukazuje dnes/cíl + due slovíček count
-- [ ] ISC-40: goal number input v SettingsModal (5–60 min)
+- [x] ISC-36: NOVÝ `utils/dailyGoalUtils.ts` `getTodayMinutes(history, liveMs)` + `getDailyGoal()`
+- [x] ISC-37: klíč `aria_daily_goal_v1` default 10, `todayMinutes` se NEukládá (počítá z historie)
+- [x] ISC-38: header chip `🔥 {streak} · {today}/{goal} min`, zezelená při splnění, klik → Progress
+- [x] ISC-39: idle obrazovka (AvatarView disconnected) ukazuje dnes/cíl + due slovíček count
+- [x] ISC-40: goal number input v SettingsModal (5–60 min)
 
 ### Global
-- [ ] ISC-41: Anti: žádná nová logika nepřibyla do App.tsx mimo wiring (utils-first princip)
-- [ ] ISC-42: `APP_VERSION` = v1.9.0 + RELEASE_HISTORY záznam (česky)
-- [ ] ISC-43: `tsc --noEmit` 0 chyb po každé položce
-- [ ] ISC-44: `bun run build` OK po každé položce
+- [x] ISC-41: Anti: žádná nová logika nepřibyla do App.tsx mimo wiring (utils-first princip)
+- [x] ISC-42: `APP_VERSION` = v1.9.0 + RELEASE_HISTORY záznam (česky)
+- [x] ISC-43: `tsc --noEmit` 0 chyb po každé položce
+- [x] ISC-44: `bun run build` OK po každé položce
 
 ## Test Strategy
 
@@ -178,8 +178,38 @@ poctivě měří reading, neztrácí session, propisuje TEST_ME verdikt a zobraz
 
 ## Changelog
 
-(zapisuje se v LEARN — konjektura/refutace/learning)
+- **conjectured:** getSystemInstruction lze rozšířit o focusWords+recurringErrors jako optional
+  poziční params za scenario bez rozbití existujících 4-arg volání.
+  **refuted_by:** nic — konjektura držela; tsc by chytil chybějící aktualizaci call-site (funkce
+  je typovaná), ale advisor správně varoval, že prohození dvou `string[]` params projde tsc.
+  **learned:** u >4 pozičních params stejného typu je vizuální kontrola call-sites povinná —
+  kompilátor neochrání před sémantickým swapem. Oba call-sites ověřeny ručně.
+  **criterion_now:** ISC-16/17/18/28 ověřeny i čtením pořadí argumentů, ne jen existencí.
+
+- **conjectured:** state-updater guard (`if prev.level !== 'TEST_ME' return prev`) stačí pro
+  idempotenci aplikace level verdiktu.
+  **refuted_by:** advisor — Live conversationMessages se mění po chuncích; useEffect může
+  matchnout tentýž verdikt vícekrát, updater-guard ochrání zápis, ale toast/side-effect proběhne víckrát.
+  **learned:** pro side-effecty mimo state updater je nutný synchronní ref-guard nastavený PŘED
+  setSettings, resetovaný na začátku nové session.
+  **criterion_now:** P0-3 zpevněn `levelVerdictAppliedRef` (commit 8. fix).
 
 ## Verification
 
-(zapisuje se v EXECUTE/VERIFY — evidence per ISC)
+- ISC-1,2: Grep — `App.tsx:190 const voiceActive = isListening || liveRuntimeState.isUserTalking` (bez isSpeaking), deps `[isListening, liveRuntimeState.isUserTalking]`.
+- ISC-3,4,5: Read — `ReadingModeView` `userTalkingMs`Ref + `getCurrentUserTalkingMs`; session pole `userTalkingMs`; `finalizeReadingSession` `speakingMs: session.userTalkingMs`.
+- ISC-6,7,8,9: Read — `onSessionUpdate` prop + useEffect nad conversationLog; `readingSessionRef` v App; `exitReadingMode` fallback na ref; obě cesty na `finalizeReadingSession`.
+- ISC-10,11: Grep — `rg -c "Turn economy" constants.ts` = 1, v base Core Rules (mimo conditionaly/scenarioBlock).
+- ISC-12..18: Grep+Read — `buildFocusWords` export; getSystemInstruction param + vocabBlock guard; useLiveAPI connect spočítá z loadVocabulary; geminiService+App init předávají.
+- ISC-19..29: Read — `learnerProfileUtils.ts` ERROR_TAGS×12, mergeSummaryIntoProfile exact-tag, getTopErrors decay 30d, try/catch; summary kontrakt errorTags; `mergeSummaryIntoProfile` 2× v finalizerech; reading větev `getReadingSystemInstruction(correctionLang, referenceText)` bez injekce (grep=1).
+- ISC-30,31: **Unit test 7/7** — verdikt na vlastním řádku matchne, konverzační zmínka/„almost B1+"/C2 NEmatchne.
+- ISC-32,33,34,35: Read — testMeBlock jen level==='TEST_ME'; guard v Live useEffect + Legacy handleSend; applyLevelVerdict setSettings+saveSettings+toast; ref-guard.
+- ISC-36,37: Read — `dailyGoalUtils.ts` getTodayMinutes z historie (todayMinutes neukládán), getDailyGoal default 10 klíč `aria_daily_goal_v1`.
+- ISC-38,39,40: **Code-verified, browser-DEFERRED** (WSL bez browseru) — header chip, AvatarView idle cue, SettingsModal slider 5–60. Vizuální render neověřen; tsc+build OK. Follow-up: Tomův manuální smoke dle blueprint checklistu.
+- ISC-41: Read — nová logika v utils/ (learnerProfile/level/dailyGoal/vocab); App.tsx jen wiring.
+- ISC-42: Grep — APP_VERSION "v1.9.0" + RELEASE_HISTORY záznam; package.json 1.9.0; v1.9.0 zapečeno v bundlu.
+- ISC-43,44: Bash — `tsc --noEmit` exit 0, `bun run build` exit 0 po každé položce (8 commitů).
+
+**Doctrine:** Rule 1 — user-facing UI ISC (38/39/40) browser-DEFERRED, přiznáno (platforma bez Interceptoru/agent-browseru); kód+build verified. Rule 2 — advisor volán, vychytal ref-guard (P0-3) → opraveno. Rule 2a (Cato) — E3, neaplikuje se. Rule 3 — žádný konflikt.
+
+**Vědomě odložené (nad rámec jádra P0, ne regrese):** fallback hint TEST_ME po 12+ výměnách bez verdiktu (blueprint P0-3 sekundární UX) — bez něj zůstává dnešní stav (žádný falešný zápis). Behaviorální ověření promptových injekcí (Aria reálně recykluje slova / cílí na slabiny) vyžaduje živou Gemini session → Tomův smoke test.
