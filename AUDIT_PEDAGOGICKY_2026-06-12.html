@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aria — Pedagogický & UX audit · 12. 6. 2026</title>
+<style>
+  :root {
+    --bg: #0f172a; --bg2: #1e293b; --card: #1e293b; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8; --dim: #64748b;
+    --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa; --violet: #a78bfa;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 80px; }
+  header.hero { text-align: center; padding: 36px 16px 28px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+  header.hero h1 { font-size: 1.9em; font-weight: 900; }
+  header.hero h1 span { color: var(--green); }
+  header.hero p.sub { color: var(--muted); margin-top: 6px; font-size: .95em; }
+  header.hero .meta { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+  .chip { background: var(--bg2); border: 1px solid var(--border); border-radius: 999px; padding: 4px 14px; font-size: .78em; font-weight: 700; color: var(--muted); }
+  h2 { font-size: 1.35em; font-weight: 900; margin: 44px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+  h2 .num { color: var(--dim); font-size: .8em; margin-right: 8px; }
+  h3 { font-size: 1.05em; font-weight: 800; margin: 22px 0 10px; }
+  p { margin-bottom: 12px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 760px) { .grid2, .grid4 { grid-template-columns: 1fr; } }
+  .score-card { text-align: center; padding: 16px 10px; }
+  .score-card .val { font-size: 2em; font-weight: 900; }
+  .score-card .lbl { font-size: .75em; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; margin-top: 2px; }
+  .g { color: var(--green); } .a { color: var(--amber); } .r { color: var(--red); } .b { color: var(--blue); } .v { color: var(--violet); }
+  .tag { display: inline-block; border-radius: 6px; padding: 1px 8px; font-size: .72em; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; vertical-align: 2px; }
+  .tag.ok { background: rgba(52,211,153,.15); color: var(--green); border: 1px solid rgba(52,211,153,.35); }
+  .tag.warn { background: rgba(251,191,36,.15); color: var(--amber); border: 1px solid rgba(251,191,36,.35); }
+  .tag.crit { background: rgba(248,113,113,.15); color: var(--red); border: 1px solid rgba(248,113,113,.35); }
+  .tag.info { background: rgba(96,165,250,.15); color: var(--blue); border: 1px solid rgba(96,165,250,.35); }
+  code { background: #0b1222; border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; font-size: .85em; color: #93c5fd; font-family: Consolas, monospace; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: .9em; }
+  th { background: #0b1222; text-align: left; padding: 9px 12px; border: 1px solid var(--border); font-size: .78em; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  td { padding: 9px 12px; border: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+  ul, ol { margin: 0 0 12px 22px; }
+  li { margin-bottom: 6px; }
+  .finding { border-left: 4px solid var(--border); padding: 12px 16px; margin-bottom: 12px; background: var(--card); border-radius: 0 10px 10px 0; }
+  .finding.crit { border-left-color: var(--red); }
+  .finding.warn { border-left-color: var(--amber); }
+  .finding.ok { border-left-color: var(--green); }
+  .finding b.t { display: block; margin-bottom: 4px; }
+  .finding .src { font-size: .78em; color: var(--dim); margin-top: 6px; }
+  .plan-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+  .plan-item .head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .plan-item .head b { font-size: 1em; }
+  .prio { font-weight: 900; border-radius: 8px; padding: 2px 10px; font-size: .78em; }
+  .prio.p0 { background: var(--red); color: #fff; }
+  .prio.p1 { background: var(--amber); color: #1f2937; }
+  .prio.p2 { background: var(--blue); color: #fff; }
+  .eff { font-size: .75em; color: var(--dim); font-weight: 700; margin-left: auto; }
+  .why { font-size: .88em; color: var(--muted); }
+  .why b { color: var(--violet); }
+  .tldr { background: linear-gradient(135deg, rgba(52,211,153,.08), rgba(96,165,250,.06)); border: 1px solid rgba(52,211,153,.3); border-radius: 16px; padding: 22px 24px; margin-bottom: 8px; }
+  .tldr h2 { border: none; margin: 0 0 10px; padding: 0; color: var(--green); }
+  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 9px; }
+  .bar-row .lbl { width: 220px; font-size: .85em; font-weight: 700; flex-shrink: 0; }
+  .bar-row .bar { flex: 1; height: 12px; background: #0b1222; border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+  .bar-row .fill { height: 100%; border-radius: 999px; }
+  .bar-row .pct { width: 46px; text-align: right; font-weight: 900; font-size: .85em; }
+  @media (max-width: 600px) { .bar-row .lbl { width: 130px; } }
+  .loop { background: #0b1222; border: 1px dashed var(--border); border-radius: 12px; padding: 14px 18px; font-family: Consolas, monospace; font-size: .85em; margin: 12px 0; white-space: pre-wrap; color: var(--muted); }
+  .loop .broken { color: var(--red); font-weight: 700; }
+  .loop .fix { color: var(--green); font-weight: 700; }
+  footer { margin-top: 56px; text-align: center; color: var(--dim); font-size: .8em; border-top: 1px solid var(--border); padding-top: 20px; }
+  details { margin-bottom: 10px; }
+  summary { cursor: pointer; font-weight: 700; color: var(--blue); padding: 6px 0; }
+  .persona { border-radius: 14px; padding: 18px 20px; }
+  .persona.teacher { background: rgba(167,139,250,.07); border: 1px solid rgba(167,139,250,.3); }
+  .persona.student { background: rgba(96,165,250,.07); border: 1px solid rgba(96,165,250,.3); }
+  .persona h3 { margin-top: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>🎓 <span>Aria English Tutor</span> — hloubkový audit</h1>
+  <p class="sub">Pedagogika · funkčnost · UI/UX · moderní metody výuky — z pohledu učitele i žáka</p>
+  <div class="meta">
+    <span class="chip">v1.8.1</span>
+    <span class="chip">12. červen 2026</span>
+    <span class="chip">React + Vite · Gemini 3.5 Flash + 3.1 Live</span>
+    <span class="chip">~4 600 řádků kódu auditováno</span>
+  </div>
+</header>
+
+<!-- ═══════════ TL;DR ═══════════ -->
+<div class="tldr">
+  <h2>⚡ TL;DR — hlavní zjištění</h2>
+  <p><b>Aria má vzácně silné jádro:</b> real-time hlasová konverzace s přerušováním je přesně to, co výzkum osvojování jazyka označuje za nejcennější (output + okamžitá zpětná vazba). Reading Mode s předlohou z fotky je metodicky moderní shadowing. Technicky je app po auditech v1.8.1 stabilní.</p>
+  <p><b>Hlavní problém není chybějící funkce — jsou to rozpojené smyčky.</b> Aplikace všechna učební data <i>sbírá</i> (chyby, slovíčka, summaries, streak), ale nikam je <i>nevrací</i>:</p>
+  <ul>
+    <li>🔴 Test úrovně (TEST_ME) <b>nikdy neuloží výsledek</b> — assessment je slepá ulička</li>
+    <li>🔴 Aria si <b>nepamatuje tvoje chyby</b> mezi lekcemi — každá session začíná z nuly</li>
+    <li>🔴 Aria <b>neví o tvém slovníčku</b> — naučená slova se nikdy nerecyklují do konverzace</li>
+    <li>🟠 Streak a pokrok jsou <b>schované v modalu</b> — návyk (tvoje výzva č. 1) nemá palivo</li>
+  </ul>
+  <p style="margin-bottom:0"><b>Dobrá zpráva:</b> data už existují v localStorage. Uzavření smyček = dny práce, ne týdny. Plán níže (16 položek, P0–P2).</p>
+</div>
+
+<!-- ═══════════ SCORECARD ═══════════ -->
+<h2><span class="num">01</span>📊 Celkové hodnocení</h2>
+<div class="grid4">
+  <div class="card score-card"><div class="val g">8/10</div><div class="lbl">Technický stav</div></div>
+  <div class="card score-card"><div class="val g">8/10</div><div class="lbl">Konverzační jádro</div></div>
+  <div class="card score-card"><div class="val a">5/10</div><div class="lbl">Didaktická smyčka</div></div>
+  <div class="card score-card"><div class="val r">3/10</div><div class="lbl">Podpora návyku</div></div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <h3 style="margin-top:4px">Srovnání s moderními metodami výuky jazyků</h3>
+  <div class="bar-row"><span class="lbl">Output practice (mluvení)</span><div class="bar"><div class="fill" style="width:90%;background:var(--green)"></div></div><span class="pct g">9/10</span></div>
+  <div class="bar-row"><span class="lbl">Afektivní filtr (Krashen)</span><div class="bar"><div class="fill" style="width:80%;background:var(--green)"></div></div><span class="pct g">8/10</span></div>
+  <div class="bar-row"><span class="lbl">Shadowing / čtení nahlas</span><div class="bar"><div class="fill" style="width:75%;background:var(--green)"></div></div><span class="pct g">7,5/10</span></div>
+  <div class="bar-row"><span class="lbl">Korektivní zpětná vazba</span><div class="bar"><div class="fill" style="width:60%;background:var(--amber)"></div></div><span class="pct a">6/10</span></div>
+  <div class="bar-row"><span class="lbl">Comprehensible input (i+1)</span><div class="bar"><div class="fill" style="width:50%;background:var(--amber)"></div></div><span class="pct a">5/10</span></div>
+  <div class="bar-row"><span class="lbl">Spaced repetition (SRS)</span><div class="bar"><div class="fill" style="width:40%;background:var(--amber)"></div></div><span class="pct a">4/10</span></div>
+  <div class="bar-row"><span class="lbl">Task-based learning</span><div class="bar"><div class="fill" style="width:30%;background:var(--red)"></div></div><span class="pct r">3/10</span></div>
+  <div class="bar-row"><span class="lbl">Assessment & progrese (CEFR)</span><div class="bar"><div class="fill" style="width:25%;background:var(--red)"></div></div><span class="pct r">2,5/10</span></div>
+  <div class="bar-row"><span class="lbl">Learner model (paměť tutora)</span><div class="bar"><div class="fill" style="width:15%;background:var(--red)"></div></div><span class="pct r">1,5/10</span></div>
+  <div class="bar-row"><span class="lbl">Habit formation (streak, cíle)</span><div class="bar"><div class="fill" style="width:30%;background:var(--red)"></div></div><span class="pct r">3/10</span></div>
+</div>
+
+<!-- ═══════════ STAV PROJEKTU ═══════════ -->
+<h2><span class="num">02</span>🔧 Stav projektu</h2>
+<div class="card">
+  <ul>
+    <li><b>Stack:</b> React 19 + Vite + Tailwind, PWA, single-page. Chat: <code>gemini-3.5-flash</code>, hlas: <code>gemini-3.1-flash-live-preview</code> (free tier, 250 req/den).</li>
+    <li><b>3 režimy:</b> ⚡ Live (real-time audio, default) · 📝 Legacy (STT → chat → TTS) · 📚 Reading (výslovnostní kouč s předlohou z fotky).</li>
+    <li><b>Technická zralost:</b> dobrá — ErrorBoundary, localStorage hardening, úklid časovačů, vendor code-splitting (audit v1.8.1 ✓). Build čistý.</li>
+    <li><b>Známý dluh (vědomě odložený):</b> API klíč v client bundlu (security), <code>App.tsx</code> ~966 řádků monolit, <code>ScriptProcessorNode</code> deprecated (→ AudioWorklet), chybí <code>@types/react</code> — tsc validuje jen syntakticky <span class="tag warn">pozor</span>.</li>
+  </ul>
+  <p class="src" style="font-size:.78em;color:var(--dim)">⚠️ Audit je artefaktový (kód + struktura) — na tomto WSL hostu není browser (Interceptor ani agent-browser); vizuální rendering neověřen.</p>
+</div>
+
+<!-- ═══════════ FUNKČNOST ═══════════ -->
+<h2><span class="num">03</span>🧩 Inventář funkcí a jejich účinnost</h2>
+<table>
+  <thead><tr><th>Funkce</th><th>Stav</th><th>Pedagogická účinnost</th></tr></thead>
+  <tbody>
+    <tr><td><b>Live konverzace</b> s přerušováním, pauzou, rychlostí řeči</td><td><span class="tag ok">výborné</span></td><td>Jádro hodnoty — reálný trénink mluvení, vzácný i u placených apek</td></tr>
+    <tr><td><b>Reading Mode</b> + 📷 předloha z fotky (OCR)</td><td><span class="tag ok">výborné</span></td><td>Moderní shadowing; reference text řeší STT-vs-předloha konflikt správně</td></tr>
+    <tr><td><b>15 scénářů</b> vč. personalizovaného Creo Training</td><td><span class="tag warn">dobré</span></td><td>Role-play bez úkolu a cíle — kulisa, ne task-based learning</td></tr>
+    <tr><td><b>Strictness 1–10</b> (5 pásem korekcí)</td><td><span class="tag ok">dobré</span></td><td>Koncepčně správné kontinuum; slabina v podání korekcí v audiu (viz 05)</td></tr>
+    <tr><td><b>Slovníček</b> — hlasové triggery, quick-add, bulk, flashcards, statusy</td><td><span class="tag warn">dobré</span></td><td>Skvělý sběr, slabá retence: pseudo-SRS, jen EN→CZ, bez kontextu věty</td></tr>
+    <tr><td><b>Session summary</b> (3 plusy / 3 chyby / 3 věty)</td><td><span class="tag warn">slabé využití</span></td><td>Kvalitní formativní feedback, který umírá v modalu — nikdy se nevrací</td></tr>
+    <tr><td><b>Progress</b> — streak, čas mluvení, trend chyb</td><td><span class="tag crit">nespolehlivé</span></td><td>Metriky zkreslené (viz nálezy F4, F6), streak neviditelný</td></tr>
+    <tr><td><b>TEST_ME</b> assessment úrovně</td><td><span class="tag crit">rozbité</span></td><td>Výsledek se nikam nepropíše — slepá ulička</td></tr>
+    <tr><td><b>PWA</b> instalace, wake lock, force update, usage donut</td><td><span class="tag ok">dobré</span></td><td>Transparence limitu API je nadstandard</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════ KRITICKÉ NÁLEZY ═══════════ -->
+<h2><span class="num">04</span>🚨 Klíčové nálezy (s evidencí v kódu)</h2>
+
+<div class="finding crit">
+  <b class="t">F1 — Výsledek testu úrovně se nikdy neuloží <span class="tag crit">kritické</span></b>
+  Prompt instruuje Ariu „urči úroveň A1–C1 konverzací", ale neexistuje žádný mechanismus, který by verdikt zachytil a zapsal do <code>settings.level</code>. Level zůstává <code>TEST_ME</code> navždy, header ukazuje „Assessment" donekonečna a Aria v každé další session znovu „testuje". Žák bez ručního zásahu nikdy nedostane svou úroveň. <b>Hlubší problém:</b> jediná funkční cesta k úrovni je dnes ruční sebezařazení v Settings — a sebezařazení je notoricky nespolehlivý vstup (žáci se typicky zařadí špatně oběma směry). Přitom na úrovni stojí celá CEFR adaptace i srozumitelnost vstupu (i+1). Rozbitý TEST_ME je symptom; <b>chybějící spolehlivá kalibrace je nemoc</b> — proto je P0-3 vstupní branou celé progrese.
+  <div class="src">constants.ts:330 (prompt) · App.tsx — žádný parser verdiktu neexistuje · header App.tsx:749</div>
+</div>
+
+<div class="finding crit">
+  <b class="t">F2 — Amnestický tutor: chyby se mezi lekcemi nepřenášejí <span class="tag crit">kritické</span></b>
+  <code>initializeChat()</code> dostává jen level + strictness + scénář. Summary s „3 nejčastějšími chybami" se uloží do historie a <b>nikdy se nepoužije</b> — další session o nich neví. Reálný učitel si vede poznámky o žákovi; Aria má každou hodinu prázdnou hlavu. Tohle je největší pedagogický rozdíl proti skutečné výuce.
+  <div class="src">geminiService.ts:8–17 (initializeChat bez paměti) · App.tsx:279–296 (summary → jen modal) · sessionHistoryUtils.ts (data leží ladem)</div>
+</div>
+
+<div class="finding crit">
+  <b class="t">F3 — Slovníček a konverzace jsou dva oddělené světy <span class="tag crit">kritické</span></b>
+  Systémový prompt nikdy nedostane seznam slov, která se žák učí. Slovo přidané v pondělí se v úterní konverzaci neobjeví, pokud na něj nenarazíš náhodou. Recyklace slovní zásoby v kontextu je přitom nejsilnější známý mechanismus retence — a stojí jeden řádek v promptu.
+  <div class="src">constants.ts:259–345 (getSystemInstruction — žádný vocab parametr) · vocabularyUtils.ts (izolovaný)</div>
+</div>
+
+<div class="finding warn">
+  <b class="t">F4 — „Čas mluvení" počítá i mluvení Arie <span class="tag warn">vysoké</span></b>
+  <code>voiceActive = isListening || isUserTalking || isSpeaking</code> — metrika „Cas mluveni" v Progress sčítá dohromady čas, kdy mluví žák, I čas, kdy mluví Aria. Reading mode dokonce počítá celou délku session. Žák vidí lichotivé, ale falešné číslo o vlastním výkonu.
+  <div class="src">App.tsx:172–182 (voiceActive) · App.tsx:224 (reading: speakingMs = durationMs)</div>
+</div>
+
+<div class="finding warn">
+  <b class="t">F5 — Exit z Reading Mode přes header zahodí progress <span class="tag warn">vysoké</span></b>
+  Reading session se uloží jen při odchodu tlačítkem „← Zpět" uvnitř módu. Klik na 📚 ikonu v headeru volá <code>exitReadingMode()</code> bez session argumentu → <code>finalizeReadingSession</code> se nespustí → lekce zmizí z historie. Dvě cesty ven, jen jedna ukládá.
+  <div class="src">App.tsx:818 (header onClick bez session) vs. ReadingModeView.tsx:179–186 (handleExit předává session)</div>
+</div>
+
+<div class="finding warn">
+  <b class="t">F6 — Trend chyb je zkreslený nastavením přísnosti <span class="tag warn">střední</span></b>
+  <code>correctionCount</code> se počítá regexem na „💡 Correction" v přepisu. Při strictness ≤ 4 se correction bloky negenerují → 0 oprav → graf hlásí „Zlepšení", i když se žák jen přepnul na mírnější režim. Trend míchá jablka (přísnost) s hruškami (skutečné chyby).
+  <div class="src">App.tsx:245–248 (regex počítání) · constants.ts:272,282 (formát vypnut pro nízkou strictness)</div>
+</div>
+
+<div class="finding warn">
+  <b class="t">F7 — Změna úrovně/přísnosti v Live módu tiše nefunguje <span class="tag warn">střední</span></b>
+  Gemini Live session má neměnný system prompt (potvrzeno). <code>[SYSTEM UPDATE]</code> zpráva se posílá jen v legacy módu. V Live (default!) se uložené nastavení projeví až po restartu session — UI o tom nikde neinformuje. Žák si zvýší přísnost a diví se, že se nic nezměnilo.
+  <div class="src">App.tsx:410 (podmínka jen 'legacy') · useLiveAPI.ts:234–244 (systemInstruction při connectu)</div>
+</div>
+
+<div class="finding warn">
+  <b class="t">F8 — Pseudo-SRS: fixní 7 dní není spaced repetition <span class="tag warn">střední</span></b>
+  „Zvládnuté" slovo se vrací po pevných 7 dnech; skutečné SRS používá expandující intervaly (1→3→7→16→35 dní) podle úspěšnosti. Navíc „mastered = 3× v řadě" z release notes je v kódu ve skutečnosti kumulativní <code>correctCount ≥ 3 && correct > incorrect</code> — slovo lze „zvládnout" se skóre 3:2.
+  <div class="src">vocabularyUtils.ts:184–188 (fixní interval) · :166–171 (kumulativní logika + přiznání v komentáři)</div>
+</div>
+
+<div class="finding ok">
+  <b class="t">F9 — Co je naopak výborné <span class="tag ok">silné stránky</span></b>
+  <ul style="margin-bottom:0">
+    <li>Gapless audio přehrávání + interruption handling — technicky čisté (useLiveAPI.ts:336–390)</li>
+    <li>Reference text z fotky chrání před falešnými korekcemi STT (constants.ts:375–387 — „NEVER correct against your own guess")</li>
+    <li>Hlasové triggery slovníčku v češtině i angličtině s blacklistem proti false-positives</li>
+    <li>Strictness 1–2 = čistá konverzace bez oprav — správná opora pro sebevědomí začátečníka</li>
+    <li>Speech rate slider (50–150 %) — srozumitelnost pro nižší úrovně</li>
+    <li>Personalizovaný scénář Creo Training — přesně cílený na reálnou potřebu (školení v angličtině)</li>
+  </ul>
+</div>
+
+<!-- ═══════════ PERSONY ═══════════ -->
+<h2><span class="num">05</span>👥 Dva pohledy</h2>
+<div class="grid2">
+  <div class="persona teacher">
+    <h3 class="v">🧑‍🏫 Učitel angličtiny by řekl:</h3>
+    <ul>
+      <li>„Konverzační čas, který tahle app dá žákovi, je víc, než dostane ve většině kurzů. To je obrovská hodnota."</li>
+      <li>„Ale já si o každém žákovi vedu sešit — co mu nejde, co opakuje. Aria ten sešit má (summaries), jen do něj nikdy nenahlédne."</li>
+      <li>„Opravy přečtené nahlas blokem na konci („light bulb Corrections… v češtině anglickým hlasem") ruší tok. V řeči opravuj recastem — přeformuluj správně a jdi dál; detailní rozbor patří až do shrnutí."</li>
+      <li>„CEFR úroveň jako jedno slovo v promptu nestačí — B1 potřebuje cílové struktury a slovní zásobu. A hlavně: kdo žákovi řekne, že už na B1 je?"</li>
+      <li>„Scénář bez úkolu je konverzace, ne lekce. Dej žákovi cíl: objednej, reklamuj, domluv termín — a vyhodnoť splnění."</li>
+    </ul>
+  </div>
+  <div class="persona student">
+    <h3 class="b">🧑‍🎓 Žák (Tom, cíl B1) — modelová zkušenost odvozená z kódu:</h3>
+    <ul>
+      <li>„Mluvit můžu hned a bez ostychu — nikdo se mi nesměje. Pauza a pomalejší řeč jsou super." ✓</li>
+      <li>„Udělal jsem test úrovně… a nic. Pořád píše Assessment. Tak jsem si úroveň nastavil ručle." (F1)</li>
+      <li>„Včera mi řekla, že pletu minulý čas. Dneska o tom neví." (F2)</li>
+      <li>„Mám 40 slov ve slovníčku a v konverzaci je nikdy neslyším." (F3)</li>
+      <li>„Otevřel jsem appku po týdnu a nevím, kde jsem skončil ani co mám dělat dneska." — <b>tohle je přesně mechanismus výzvy C0 (vytrvalost): žádný denní cíl, žádný viditelný streak, žádné „dnes procvič tohle".</b></li>
+      <li>„Kartičky umím za 2 minuty — poznám překlad. Ale říct to slovo anglicky, když ho potřebuju, je jiná liga." (jen recognition, ne produkce)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════ SYSTÉMOVÁ DIAGNÓZA ═══════════ -->
+<h2><span class="num">06</span>🔄 Systémová diagnóza — rozpojené smyčky</h2>
+<div class="card">
+<p>Strukturální pohled (kauzální smyčky): aplikace má postavený <b>motor</b> (konverzace) i <b>senzory</b> (summaries, slovníček, streak), ale chybí <b>zpětné vedení</b> — informace tečou jen jedním směrem, ven z žáka do localStorage, a tam končí.</p>
+<div class="loop">┌──────────────────────────────────────────────────────────┐
+│  konverzace → chyby → summary → <span class="broken">✂ MODAL (konec toku)</span>     │
+│       ↑                                                  │
+│       └──── <span class="fix">měl by vést: profil chyb → příští prompt</span>     │
+│                                                          │
+│  čtení/poslech → nové slovo → slovníček → <span class="broken">✂ IZOLACE</span>      │
+│       ↑                                                  │
+│       └──── <span class="fix">měl by vést: due slova → příští konverzace</span>   │
+│                                                          │
+│  TEST_ME → verdikt Arie (jen v audiu) → <span class="broken">✂ NIKAM</span>          │
+│       ↑                                                  │
+│       └──── <span class="fix">měl by vést: parse → settings.level → progrese</span>│
+│                                                          │
+│  lekce → streak → <span class="broken">✂ SCHOVANÝ V MODALU</span>                    │
+│       ↑                                                  │
+│       └──── <span class="fix">měl by vést: viditelný cíl dne → návyk (C0)</span>   │
+└──────────────────────────────────────────────────────────┘</div>
+<p style="margin-bottom:0"><b>Závěr first-principles analýzy:</b> nejde o chybějící komponenty, ale o 4 rozpojené dráty. Všechna data už v localStorage jsou. Uzavření smyček nevyžaduje backend, placené API ani refaktoring — jen propojení existujícího při <code>initializeChat()</code> / <code>connect()</code> a pár UI změn.</p>
+</div>
+
+<!-- ═══════════ PLÁN ═══════════ -->
+<h2><span class="num">07</span>🗺️ Plán vylepšení — prioritizovaný</h2>
+<p>Priority: <span class="prio p0">P0</span> = uzavři učební smyčky + retence (největší pedagogický dopad / nejmenší práce — pro výzvu C0 je retence rovnocenná smyčkám, proto je v P0, ne níž) · <span class="prio p1">P1</span> = didaktika do hloubky · <span class="prio p2">P2</span> = engagement & platforma. Náročnost: S = hodiny, M = den–dva, L = více dní.</p>
+
+<h3>🔴 P0 — uzavřít smyčky (doporučené pořadí)</h3>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p0">P0-1</span><b>Paměť tutora: profil chyb → system prompt</b><span class="eff">M</span></div>
+  <p class="why">Po každé session ulož <code>commonErrors</code> do kumulativního profilu (localStorage). Při <code>initializeChat()</code>/<code>connect()</code> injektuj top-3 opakované chyby: <i>„The student repeatedly struggles with: past tense, articles. Weave gentle practice naturally — don't lecture."</i> <b>Proč:</b> uzavírá hlavní smyčku (F2); z amnestického chatbota dělá tutora, který žáka zná. Pozor na tokeny (free tier) — max 3 chyby, krátce.</p>
+</div>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p0">P0-2</span><b>Recyklace slovíček do konverzace</b><span class="eff">S</span></div>
+  <p class="why">Do system promptu přidej ≤ 5 slov ve stavu learning/due: <i>„Naturally use these words the student is learning: rope, scaffold… Occasionally invite the student to use them."</i> <b>Proč:</b> retence z kontextového použití ≫ flashcards (F3). Jeden parametr v <code>getSystemInstruction</code>.</p>
+</div>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p0">P0-3</span><b>Opravit TEST_ME smyčku</b><span class="eff">M</span></div>
+  <p class="why">Prompt: na konci testu Aria řekne verdikt v pevném formátu (<code>LEVEL: B1</code>). App ho z přepisu zachytí regexem → uloží do <code>settings.level</code> → ukáže „🎉 Tvoje úroveň: B1". <b>Proč:</b> F1 — assessment konečně někam vede; vstupní bod progrese.</p>
+</div>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p0">P0-4</span><b>Streak + denní cíl viditelně na hlavní obrazovku</b><span class="eff">S</span></div>
+  <p class="why">Místo schování v modalu: 🔥 7 + denní minuty (např. cíl 10 min) přímo v headeru / pod avatarem. K tomu „co dnes" při otevření appky: pokračuj kde jsi skončil + počet slovíček k opakování — žádná prázdná stránka s rozhodovací paralýzou. <b>Proč:</b> přímá podpora výzvy C0 — návyk potřebuje cue → akci → odměnu, a appce dnes chybí cue. <b>Přiznaný constraint:</b> bez backendu nejde skutečná push notifikace (PWA push vyžaduje server) — proto pasivní viditelné signály, ne sliby připomínek.</p>
+</div>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p0">P0-7</span><b>Output-forcing: Aria mluví míň, žák víc</b><span class="eff">S</span></div>
+  <p class="why">Do system promptu: <i>„Keep your turns SHORT (1–3 sentences). End most turns with a question. Wait for the student — never fill silence with explanations. The student should speak most of the time."</i> <b>Proč:</b> k B1 vede produkce (Swain — pushed output), ne poslech příjemného výkladu. Měřit talk-time (P0-5) nestačí — poměr musí něco aktivně tlačit. Nejlevnější pedagogický fix v celém plánu.</p>
+</div>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p0">P0-5</span><b>Poctivá metrika mluvení</b><span class="eff">S</span></div>
+  <p class="why"><code>speakingMs</code> počítej jen z <code>isListening || isUserTalking</code> (bez Ariina <code>isSpeaking</code>); v reading módu odhad z input transcript aktivity. <b>Proč:</b> F4 — metriky, na kterých stojí motivace, musí být pravdivé.</p>
+</div>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p0">P0-6</span><b>Fix: exit z Reading přes header neukládá session</b><span class="eff">S</span></div>
+  <p class="why">Header toggle musí projít stejnou cestou jako „← Zpět" (zvednout session stav do App, nebo header v reading módu jen delegovat na <code>handleExit</code> v ReadingModeView). <b>Proč:</b> F5 — ztracený progress = ztracená motivace.</p>
+</div>
+
+<h3>🟠 P1 — didaktika do hloubky</h3>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p1">P1-7</span><b>Skutečné SRS s expandujícími intervaly</b><span class="eff">M</span></div>
+  <p class="why">Per-slovo interval 1→3→7→16→35 dní (Leitner/SM-2 lite), reset při chybě; „mastered" = 3 <i>po sobě jdoucí</i> správně (per-word streak, F8). Fronta „dnes k opakování" s badge počtem.</p>
+</div>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p1">P1-8</span><b>Produkční flashcards: CZ→EN + výslovnost</b><span class="eff">M</span></div>
+  <p class="why">Obrácený směr (vidíš česky, řekneš/napíšeš anglicky) + 🔊 přehrání slova přes TTS + ukládat slovo s větou, ve které se objevilo. <b>Proč:</b> testing effect — produkce sedí v paměti násobně líp než rozpoznání.</p>
+</div>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p1">P1-9</span><b>Scénáře s úkolem (task-based learning)</b><span class="eff">M</span></div>
+  <p class="why">Každý scénář dostane: cíl („objednej jídlo, zeptej se na alergeny, požádej o účet"), 3–5 klíčových frází před startem, checklist splnění v summary. <b>Proč:</b> role-play → lekce s měřitelným výsledkem. Začni u Creo Training a 3 nejpoužívanějších.</p>
+</div>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p1">P1-10</span><b>Drill na practice sentences ze summary</b><span class="eff">M</span></div>
+  <p class="why">Tlačítko „Procvičit" u 3 vět ze summary → mini-režim: řekni větu, Aria zhodnotí, další. <b>Proč:</b> F2/B2 — feedback přestane umírat v modalu, summary dostane akci.</p>
+</div>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p1">P1-11</span><b>Progrese úrovně: „připraven na B1?"</b><span class="eff">M</span></div>
+  <p class="why">Po N lekcích (např. 10) nabídni re-assessment; v Progress ukaž odhad vzdálenosti k cíli B1 (TELOS G0) — progress bar k cíli, ne jen počty lekcí. <b>Proč:</b> cíl systému = tah celé motivace.</p>
+</div>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p1">P1-12</span><b>Korekce v Live módu jako recast</b><span class="eff">S</span></div>
+  <p class="why">Pro strictness 5–8 v audiu: krátký recast v toku řeči („Oh, you <i>went</i> there yesterday? Nice!"), detailní rozbor s češtinou až do summary. Strictness 9–10 nechat explicitní. <b>Proč:</b> blok „Corrections" čtený nahlas česky anglickým hlasem ruší konverzaci (učitelský nález, sekce 05).</p>
+</div>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p1">P1-13</span><b>UI hint: změny nastavení v Live vyžadují restart</b><span class="eff">S</span></div>
+  <p class="why">Po uložení změny levelu/strictness za běžící Live session ukaž banner „Projeví se po novém spuštění konverzace" (vzor už existuje u jazyka oprav v Reading menu). <b>Proč:</b> F7 — tichý no-op mate.</p>
+</div>
+
+<h3>🔵 P2 — engagement & platforma</h3>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p2">P2-14</span><b>Ukládat přepisy lekcí + prohlížení historie</b><span class="eff">M</span></div>
+  <p class="why">Historie dnes drží jen summary; přepis konverzace zahoď/ulož volitelně (pozor na localStorage kvótu — třeba posledních 10). Umožní „co jsem vlastně říkal" review a lepší error mining.</p>
+</div>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p2">P2-15</span><b>Konzistence UI: jazyk, úrovně, ikony</b><span class="eff">S</span></div>
+  <p class="why">LevelSelector nabízí A1–C1, Settings A1–C2 — sjednotit. Diakritika v ProgressModal („Zlepseni", „Cas mluveni", „dnu"). Sjednotit jazyk UI (česky pro ovládání, anglicky jen učební obsah) a emoji vs. SVG ikony v headeru; 📖 vs 📚 zaměnitelné.</p>
+</div>
+
+<div class="plan-item">
+  <div class="head"><span class="prio p2">P2-16</span><b>Cloudflare Worker proxy pro API klíč</b><span class="eff">L</span></div>
+  <p class="why">Známý odložený security dluh — klíč je v bundlu. Workers už používáš (ai-news-report) — proxy s rate-limitem by uzavřela i riziko vyčerpání free tieru cizím zneužitím. (Vědomě odloženo — připomínka, ne urgence.)</p>
+</div>
+
+<!-- ═══════════ CO NEDĚLAT ═══════════ -->
+<h2><span class="num">08</span>🚫 Co záměrně NEdoporučuju</h2>
+<div class="card">
+  <ul style="margin-bottom:0">
+    <li><b>Gamifikace nad rámec streaku</b> (body, levely, odznaky) — pro jednoho dospělého uživatele s jasným cílem je to šum; viditelný pokrok k B1 motivuje líp.</li>
+    <li><b>Refaktoring App.tsx teď</b> — funguje, je otestovaný auditem v1.8.1; refaktoruj až s první větší funkční změnou (P1-9 je vhodná příležitost).</li>
+    <li><b>Fonémové hodnocení výslovnosti</b> — Gemini Live neumí spolehlivý fonémový scoring (to umí Azure Speech, placené); současný model „zopakuj po mně + 1 tip" je pro free tier správný strop.</li>
+    <li><b>Push notifikace jako první krok proti C0</b> — otravné připomínky návyk spíš zabijí; začni pasivním viditelným streakem (P0-4) a vyhodnoť po měsíci.</li>
+  </ul>
+</div>
+
+<!-- ═══════════ SHRNUTÍ ═══════════ -->
+<h2><span class="num">09</span>✅ Závěr</h2>
+<div class="card">
+  <p><b>Aria je technicky zralá aplikace s výjimečně cenným jádrem</b> — neomezený, trpělivý konverzační partner je přesně to, co podle výzkumu druhého jazyka (output hypothesis, affective filter) zrychluje cestu k B1 nejvíc. Reading Mode je metodicky moderní bonus.</p>
+  <p><b>Jako učební systém je ale neúplná:</b> sbírá všechna správná data a žádná nevrací zpět do výuky. Test úrovně nikam nevede, chyby se zapomínají, slovíčka se nerecyklují, pokrok je schovaný. Výsledek: každá lekce je dobrá, ale lekce se nesčítají.</p>
+  <p style="margin-bottom:0"><b>Šest položek P0 to mění za pár dní práce</b> — všechna data už v localStorage jsou, jde jen o jejich propojení do smyček. Po P0 bude Aria tutor s pamětí, viditelným pokrokem a cílem. To je rozdíl mezi „appka na konverzaci" a „systém, který tě dovede k B1".</p>
+</div>
+
+<footer>
+  Pedagogický & UX audit · AriaEnglishTutor v1.8.1 · 12. 6. 2026 · vytvořil Jarvis (PAI)<br>
+  Evidence: ~4 600 řádků zdrojového kódu (App.tsx, constants.ts, geminiService.ts, useLiveAPI.ts, AvatarView, ReadingModeView, VocabularyModal, vocabularyUtils, sessionHistoryUtils, ProgressModal, SettingsModal, LevelSelector, usageUtils) + projektový ISA.md + git historie.<br>
+  Limity auditu: bez běžící aplikace (WSL host bez browseru) — runtime/vizuální chování odvozeno z kódu; latence, kvalita hlasu a reálná přesnost STT neměřeny.
+</footer>
+
+</div>
+</body>
+</html>

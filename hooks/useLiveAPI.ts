@@ -4,6 +4,7 @@ import { AppSettings, Message } from '../types';
 import { getSystemInstruction, getReadingSystemInstruction, SCENARIOS } from '../constants';
 import { base64ToUint8Array, arrayBufferToBase64, convertFloat32ToInt16, decodeAudioData } from '../utils/audioUtils';
 import { incrementUsage } from '../utils/usageUtils';
+import { loadVocabulary, buildFocusWords } from '../utils/vocabularyUtils';
 
 // Gemini 3.1 Flash Live — audio-to-audio model pro real-time dialog, free tier
 const LIVE_MODEL = 'gemini-3.1-flash-live-preview';
@@ -204,6 +205,10 @@ export const useLiveAPI = (
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+      // P0-2: slova k recyklaci do konverzace (jen pro konverzační mód, ne reading-výslovnost).
+      // Spočítáno při connect z aktuálního slovníčku — systemInstruction je immutable (⚡reconnect).
+      const focusWords = settings.interactionMode === 'reading' ? [] : buildFocusWords(loadVocabulary());
+
       // 1. Inicializace AudioContextu
       // Gemini posílá 24kHz, my nahráváme 16kHz. Browser to přeškáluje, pokud nastavíme kontexty správně.
       const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
@@ -235,7 +240,7 @@ export const useLiveAPI = (
         model: LIVE_MODEL,
         config: {
           responseModalities: [Modality.AUDIO], // Chceme primárně audio
-          systemInstruction: { parts: [{ text: settings.interactionMode === 'reading' ? getReadingSystemInstruction(correctionLang, referenceText) : getSystemInstruction(settings.level, settings.correctionStrictness, settings.showCzechTranslation, settings.activeScenario ? SCENARIOS.find(s => s.id === settings.activeScenario) : null) }] },
+          systemInstruction: { parts: [{ text: settings.interactionMode === 'reading' ? getReadingSystemInstruction(correctionLang, referenceText) : getSystemInstruction(settings.level, settings.correctionStrictness, settings.showCzechTranslation, settings.activeScenario ? SCENARIOS.find(s => s.id === settings.activeScenario) : null, focusWords) }] },
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } },
           },

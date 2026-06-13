@@ -250,6 +250,15 @@ export const addManyVocabularyWords = async (
   return toAdd.length;
 };
 
+// P0-2 (v1.9): recyklace učených slov do konverzace. BEZ dueAt — SRS pole (dueAt) přijdou
+// až v1.10 (P1-7), který tuto funkci upgraduje. Zde prioritizace JEN podle statusu:
+// learning > new. Vrací jen lemma (bez vět) kvůli token economy na free tier.
+export const buildFocusWords = (entries: VocabularyEntry[], max = 5): string[] => {
+  const learning = entries.filter(e => e.status === 'learning');
+  const fresh = entries.filter(e => e.status === 'new');
+  return [...learning, ...fresh].slice(0, max).map(e => e.word);
+};
+
 export const statusLabel = (status: VocabularyStatus): string => {
   switch (status) {
     case 'new': return 'nové';

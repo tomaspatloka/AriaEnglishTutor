@@ -11,7 +11,7 @@ import AvatarView from './components/AvatarView';
 import ReadingModeView from './components/ReadingModeView';
 import ProgressModal from './components/ProgressModal';
 import VocabularyModal from './components/VocabularyModal';
-import { loadVocabulary, extractVocabFromTranscript, addVocabularyWordWithDefinition } from './utils/vocabularyUtils';
+import { loadVocabulary, extractVocabFromTranscript, addVocabularyWordWithDefinition, buildFocusWords } from './utils/vocabularyUtils';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useTextToSpeech } from './hooks/useTextToSpeech';
 import { useWakeLock } from './hooks/useWakeLock';
@@ -362,7 +362,7 @@ function App() {
     resetSessionTracking();
 
     setIsLoading(true);
-    await initializeChat(level, newSettings.correctionStrictness, newSettings.showCzechTranslation, activeScenario);
+    await initializeChat(level, newSettings.correctionStrictness, newSettings.showCzechTranslation, activeScenario, buildFocusWords(vocabList));
 
     const greetingText = level === 'TEST_ME'
       ? INITIAL_GREETING_TEST
@@ -385,7 +385,7 @@ function App() {
       const initPersistentSession = async () => {
         isInitializingRef.current = true;
         setIsLoading(true);
-        await initializeChat(settings.level, settings.correctionStrictness, settings.showCzechTranslation, activeScenario);
+        await initializeChat(settings.level, settings.correctionStrictness, settings.showCzechTranslation, activeScenario, buildFocusWords(vocabList));
 
         const greetingText = settings.level === 'TEST_ME'
           ? INITIAL_GREETING_TEST
@@ -488,7 +488,8 @@ function App() {
         newSettings.level,
         newSettings.correctionStrictness,
         newSettings.showCzechTranslation,
-        scenarioForRestart
+        scenarioForRestart,
+        buildFocusWords(vocabList)
       );
 
       const greetingText = newSettings.level === 'TEST_ME'

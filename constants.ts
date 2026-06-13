@@ -256,7 +256,7 @@ BEHAVIOR:
 - Periodically simulate instructor directions: "Now click on Insert > Mechanism > Servo Motor..." and ask the user to confirm they follow` },
 ];
 
-export const getSystemInstruction = (level: string, strictness: number = 5, enableTranslation: boolean = false, scenario?: Scenario | null) => {
+export const getSystemInstruction = (level: string, strictness: number = 5, enableTranslation: boolean = false, scenario?: Scenario | null, focusWords: string[] = []) => {
   let correctionLogic = "";
   let correctionFormat = "";
 
@@ -313,6 +313,13 @@ export const getSystemInstruction = (level: string, strictness: number = 5, enab
     correctionFormat = "\n[💡 Correction (in Czech) — every mistake, detailed]";
   }
 
+  // P0-2: recyklace učených slov. Blok jen když máme slova (token economy mimo prázdný stav).
+  const vocabBlock = focusWords.length > 0 ? `
+**VOCABULARY RECYCLING:** The student is learning these words: ${focusWords.join(', ')}.
+Naturally use 1–2 of them in conversation when fitting. Occasionally invite the student
+to use one ("Can you try using the word 'rope'?"). Never list them.
+` : '';
+
   const scenarioBlock = scenario ? `
 **ROLE-PLAY SCENARIO: ${scenario.label}**
 - You are NOT a teacher right now. You are playing the role of **${scenario.role}**.
@@ -333,7 +340,7 @@ Current Goal: ${level === 'TEST_ME'
 
 ${scenarioBlock}
 ${correctionLogic}
-
+${vocabBlock}
 Core Rules:
 1. **Language Barrier:** The user is Czech. If they write in Czech, **reply in Czech** but guide them back to English.
 2. **Translation:** ${enableTranslation ? "REQUIRED: After your English response, provide a Czech translation of what you just said. Start with '🇨🇿 Translation:'." : "No full translation unless asked."}
