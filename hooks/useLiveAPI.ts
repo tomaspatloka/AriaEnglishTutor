@@ -5,6 +5,7 @@ import { getSystemInstruction, getReadingSystemInstruction, SCENARIOS } from '..
 import { base64ToUint8Array, arrayBufferToBase64, convertFloat32ToInt16, decodeAudioData } from '../utils/audioUtils';
 import { incrementUsage } from '../utils/usageUtils';
 import { loadVocabulary, buildFocusWords } from '../utils/vocabularyUtils';
+import { getRecurringErrorStrings } from '../utils/learnerProfileUtils';
 
 // Gemini 3.1 Flash Live — audio-to-audio model pro real-time dialog, free tier
 const LIVE_MODEL = 'gemini-3.1-flash-live-preview';
@@ -208,6 +209,8 @@ export const useLiveAPI = (
       // P0-2: slova k recyklaci do konverzace (jen pro konverzační mód, ne reading-výslovnost).
       // Spočítáno při connect z aktuálního slovníčku — systemInstruction je immutable (⚡reconnect).
       const focusWords = settings.interactionMode === 'reading' ? [] : buildFocusWords(loadVocabulary());
+      // P0-1: opakované slabiny žáka — také jen konverzace, ne reading (výslovnostní kouč).
+      const recurringErrors = settings.interactionMode === 'reading' ? [] : getRecurringErrorStrings();
 
       // 1. Inicializace AudioContextu
       // Gemini posílá 24kHz, my nahráváme 16kHz. Browser to přeškáluje, pokud nastavíme kontexty správně.
@@ -240,7 +243,7 @@ export const useLiveAPI = (
         model: LIVE_MODEL,
         config: {
           responseModalities: [Modality.AUDIO], // Chceme primárně audio
-          systemInstruction: { parts: [{ text: settings.interactionMode === 'reading' ? getReadingSystemInstruction(correctionLang, referenceText) : getSystemInstruction(settings.level, settings.correctionStrictness, settings.showCzechTranslation, settings.activeScenario ? SCENARIOS.find(s => s.id === settings.activeScenario) : null, focusWords) }] },
+          systemInstruction: { parts: [{ text: settings.interactionMode === 'reading' ? getReadingSystemInstruction(correctionLang, referenceText) : getSystemInstruction(settings.level, settings.correctionStrictness, settings.showCzechTranslation, settings.activeScenario ? SCENARIOS.find(s => s.id === settings.activeScenario) : null, focusWords, recurringErrors) }] },
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } },
           },

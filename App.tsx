@@ -12,6 +12,7 @@ import ReadingModeView from './components/ReadingModeView';
 import ProgressModal from './components/ProgressModal';
 import VocabularyModal from './components/VocabularyModal';
 import { loadVocabulary, extractVocabFromTranscript, addVocabularyWordWithDefinition, buildFocusWords } from './utils/vocabularyUtils';
+import { mergeSummaryIntoProfile, getRecurringErrorStrings } from './utils/learnerProfileUtils';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useTextToSpeech } from './hooks/useTextToSpeech';
 import { useWakeLock } from './hooks/useWakeLock';
@@ -224,6 +225,8 @@ function App() {
     try {
       const summary = await generateSessionSummary(session.messages);
       setLatestSummary(summary);
+      // P0-1: i reading session sbírá tagy chyb do profilu (injektuje je ale jen konverzace).
+      mergeSummaryIntoProfile(summary.errorTags ?? []);
       const endedAt = Date.now();
       const durationMs = Math.max(0, endedAt - session.startedAt);
       const entry: LessonHistoryEntry = {
@@ -291,6 +294,8 @@ function App() {
       const summary = await generateSessionSummary(sessionMessages);
       setLatestSummary(summary);
       setProgressNotice(null);
+      // P0-1: agreguj opakované chyby žáka do profilu (paměť tutora napříč sessions).
+      mergeSummaryIntoProfile(summary.errorTags ?? []);
 
       const endedAt = Date.now();
       const entry: LessonHistoryEntry = {
@@ -362,7 +367,7 @@ function App() {
     resetSessionTracking();
 
     setIsLoading(true);
-    await initializeChat(level, newSettings.correctionStrictness, newSettings.showCzechTranslation, activeScenario, buildFocusWords(vocabList));
+    await initializeChat(level, newSettings.correctionStrictness, newSettings.showCzechTranslation, activeScenario, buildFocusWords(vocabList), getRecurringErrorStrings());
 
     const greetingText = level === 'TEST_ME'
       ? INITIAL_GREETING_TEST
@@ -385,7 +390,7 @@ function App() {
       const initPersistentSession = async () => {
         isInitializingRef.current = true;
         setIsLoading(true);
-        await initializeChat(settings.level, settings.correctionStrictness, settings.showCzechTranslation, activeScenario, buildFocusWords(vocabList));
+        await initializeChat(settings.level, settings.correctionStrictness, settings.showCzechTranslation, activeScenario, buildFocusWords(vocabList), getRecurringErrorStrings());
 
         const greetingText = settings.level === 'TEST_ME'
           ? INITIAL_GREETING_TEST
@@ -489,7 +494,8 @@ function App() {
         newSettings.correctionStrictness,
         newSettings.showCzechTranslation,
         scenarioForRestart,
-        buildFocusWords(vocabList)
+        buildFocusWords(vocabList),
+        getRecurringErrorStrings()
       );
 
       const greetingText = newSettings.level === 'TEST_ME'

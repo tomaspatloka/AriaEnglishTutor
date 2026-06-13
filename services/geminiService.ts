@@ -5,12 +5,12 @@ import { incrementUsage } from "../utils/usageUtils";
 
 let chatSession: Chat | null = null;
 
-export const initializeChat = async (level: string = 'TEST_ME', strictness: number = 5, enableTranslation: boolean = false, scenario?: Scenario | null, focusWords: string[] = []): Promise<void> => {
+export const initializeChat = async (level: string = 'TEST_ME', strictness: number = 5, enableTranslation: boolean = false, scenario?: Scenario | null, focusWords: string[] = [], recurringErrors: string[] = []): Promise<void> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   chatSession = ai.chats.create({
     model: MODEL_NAME,
     config: {
-      systemInstruction: getSystemInstruction(level, strictness, enableTranslation, scenario, focusWords),
+      systemInstruction: getSystemInstruction(level, strictness, enableTranslation, scenario, focusWords, recurringErrors),
     },
     history: [],
   });
@@ -91,14 +91,19 @@ Return ONLY valid JSON:
 {
   "strengths": ["...", "...", "..."],
   "commonErrors": ["...", "...", "..."],
-  "practiceSentences": ["...", "...", "..."]
+  "practiceSentences": ["...", "...", "..."],
+  "errorTags": [{"tag": "past-tense", "example": "I goed there"}]
 }
 
 Rules:
-- Exactly 3 items in each array
-- strengths = what was good
-- commonErrors = most frequent mistakes
+- Exactly 3 items in strengths, commonErrors, practiceSentences
+- strengths = what was good (Czech)
+- commonErrors = most frequent mistakes (Czech, human-readable)
 - practiceSentences = short English drill sentences
+- errorTags = 0-3 machine-readable error categories. "tag" MUST be one of EXACTLY these:
+  past-tense, present-perfect, articles, prepositions, word-order, plurals, pronouns,
+  vocabulary-choice, conditionals, question-formation, pronunciation, other.
+  "example" = the student's actual erroneous phrase (English). If unsure, use "other".
 
 Transcript:
 ${transcript}
@@ -113,10 +118,18 @@ ${transcript}
     Array.isArray(parsed.commonErrors) &&
     Array.isArray(parsed.practiceSentences)
   ) {
+    // P0-1: errorTags jsou volitelné — chybějící pole → [], validace tagu řeší profil.
+    const errorTags = Array.isArray(parsed.errorTags)
+      ? parsed.errorTags
+          .filter((e: any) => e && typeof e.tag === 'string')
+          .slice(0, 3)
+          .map((e: any) => ({ tag: String(e.tag), example: typeof e.example === 'string' ? e.example : '' }))
+      : [];
     return {
       strengths: parsed.strengths.slice(0, 3).map((x: any) => String(x)),
       commonErrors: parsed.commonErrors.slice(0, 3).map((x: any) => String(x)),
       practiceSentences: parsed.practiceSentences.slice(0, 3).map((x: any) => String(x)),
+      errorTags,
     };
   }
 

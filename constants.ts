@@ -256,7 +256,7 @@ BEHAVIOR:
 - Periodically simulate instructor directions: "Now click on Insert > Mechanism > Servo Motor..." and ask the user to confirm they follow` },
 ];
 
-export const getSystemInstruction = (level: string, strictness: number = 5, enableTranslation: boolean = false, scenario?: Scenario | null, focusWords: string[] = []) => {
+export const getSystemInstruction = (level: string, strictness: number = 5, enableTranslation: boolean = false, scenario?: Scenario | null, focusWords: string[] = [], recurringErrors: string[] = []) => {
   let correctionLogic = "";
   let correctionFormat = "";
 
@@ -320,6 +320,13 @@ Naturally use 1–2 of them in conversation when fitting. Occasionally invite th
 to use one ("Can you try using the word 'rope'?"). Never list them.
 ` : '';
 
+  // P0-1: opakované slabiny žáka z předchozích lekcí. Blok jen když profil něco má.
+  const weaknessBlock = recurringErrors.length > 0 ? `
+**STUDENT'S RECURRING WEAKNESSES (from previous lessons):** ${recurringErrors.join('; ')}.
+Gently weave practice of these into the conversation. Do NOT lecture about them or list
+them — create natural moments where the student must use them.
+` : '';
+
   const scenarioBlock = scenario ? `
 **ROLE-PLAY SCENARIO: ${scenario.label}**
 - You are NOT a teacher right now. You are playing the role of **${scenario.role}**.
@@ -341,6 +348,7 @@ Current Goal: ${level === 'TEST_ME'
 ${scenarioBlock}
 ${correctionLogic}
 ${vocabBlock}
+${weaknessBlock}
 Core Rules:
 1. **Language Barrier:** The user is Czech. If they write in Czech, **reply in Czech** but guide them back to English.
 2. **Translation:** ${enableTranslation ? "REQUIRED: After your English response, provide a Czech translation of what you just said. Start with '🇨🇿 Translation:'." : "No full translation unless asked."}

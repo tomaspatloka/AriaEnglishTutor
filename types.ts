@@ -46,6 +46,9 @@ export interface SessionSummary {
   strengths: string[];
   commonErrors: string[];
   practiceSentences: string[];
+  // P0-1: strojově zpracovatelné tagy chyb (uzavřená taxonomie) pro learner profile.
+  // commonErrors (české stringy) zůstává pro zobrazení; errorTags jsou pro agregaci.
+  errorTags?: { tag: string; example: string }[];
 }
 
 export interface LessonHistoryEntry {
