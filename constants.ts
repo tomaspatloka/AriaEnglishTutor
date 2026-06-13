@@ -1,5 +1,19 @@
-export const APP_VERSION = "v1.9.0";
+export const APP_VERSION = "v1.10.0";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.10.0",
+    date: "2026-06-13",
+    title: "Didaktika — SRS, produkční flashcards, drill, task scénáře",
+    changes: [
+      "Skutečné spaced repetition: slovíčka se vrací v rostoucích intervalech (1/3/7/16/35/90 dní) podle toho, jak ti jdou — ne fixně po týdnu. Chyba slovo nevrátí na začátek, jen o krok zpět.",
+      "Produkční flashcards: nový směr CZ→EN (řekni anglické slovo z překladu) + 🔊 výslovnost na kartě + věta, ve které slovo padlo. Přepínač EN→CZ / CZ→EN / Mix.",
+      "Procvičit věty nahlas: drill na věty ze shrnutí lekce — Aria přehraje vzor, ty zopakuješ, vyhodnotí se shoda slov (2 pokusy).",
+      "Task scénáře: restaurace, nakupování, lékař a školení Creo mají konkrétní úkol (cíl + fráze před startem) a po lekci checklist, co se povedlo.",
+      "Postup k úrovni B1: progress bar a nabídka přetestování po 10 lekcích na stejné úrovni.",
+      "Aria v hovoru opravuje přirozeně (recast ve větě) místo čtení korekčních bloků nahlas.",
+      "Upozornění, že změna úrovně/přísnosti za běžící Live konverzace se projeví až po restartu — s tlačítkem na okamžitý restart.",
+    ],
+  },
   {
     version: "v1.9.0",
     date: "2026-06-13",
