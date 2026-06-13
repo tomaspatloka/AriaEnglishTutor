@@ -79,6 +79,7 @@ function App() {
   useEffect(() => () => { if (levelToastTimerRef.current) window.clearTimeout(levelToastTimerRef.current); }, []);
   const [dailyGoal, setDailyGoalState] = useState<number>(() => getDailyGoal()); // P0-4
   const levelVerdictAppliedRef = useRef(false); // P0-3: jediná aplikace verdiktu per assessment
+  const [restartHint, setRestartHint] = useState(false); // P1-13: změny za běhu Live
 
   const prevInteractionModeRef = useRef<AppSettings['interactionMode']>(settings.interactionMode);
   const sessionStartedAtRef = useRef<number>(Date.now());
@@ -497,9 +498,18 @@ function App() {
         setIsLoading(false);
       }
     }
+
+    // P1-13: v Live módu je systemInstruction immutable — změna učebních parametrů za běhu
+    // session tiše nezabere. Upozorni a nabídni restart (legacy/reading se to netýká).
+    if (newSettings.interactionMode === 'live-api'
+        && (levelChanged || strictnessChanged || translationChanged)
+        && liveRuntimeState.isConnected) {
+      setRestartHint(true);
+    }
   };
 
   const restartSessionNow = async (newSettings: AppSettings) => {
+    setRestartHint(false); // P1-13: restart vyřeší hint
     const scenarioForRestart = newSettings.activeScenario
       ? SCENARIOS.find(s => s.id === newSettings.activeScenario) || null
       : null;
@@ -1020,6 +1030,20 @@ Return to normal English tutor behavior in your next response.`;
           isLoading={isLoading}
           errorMessage={speechError}
         />
+      )}
+
+      {/* P1-13: Hint o nutném restartu Live session po změně učebních parametrů */}
+      {restartHint && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[120] bg-amber-500 text-white text-xs font-bold rounded-2xl px-4 py-2.5 shadow-2xl border border-amber-300/50 flex items-center gap-3 max-w-[92vw]">
+          <span>⚡ Změny se projeví po novém spuštění konverzace</span>
+          <button
+            onClick={() => { setRestartHint(false); restartSessionNow(settings); }}
+            className="px-2.5 py-1 bg-white/25 rounded-full font-black hover:bg-white/40 transition active:scale-95 whitespace-nowrap"
+          >
+            Restartovat teď
+          </button>
+          <button onClick={() => setRestartHint(false)} className="p-0.5 text-white/70 hover:text-white shrink-0">✕</button>
+        </div>
       )}
 
       {/* P0-3: Toast s výsledkem assessmentu (TEST_ME → úroveň) */}
