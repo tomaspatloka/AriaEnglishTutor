@@ -302,6 +302,7 @@ export const getSystemInstruction = (level: string, strictness: number = 5, enab
       - At the bottom of your response, list "💡 Corrections" ONLY for clear grammar or vocabulary errors.
       - Explain briefly *why* it was wrong in Czech (Čeština).
       - Skip tiny mistakes (missing articles, minor preposition errors) — focus on errors that matter.
+      - IN SPOKEN CONVERSATION: prefer short RECASTS woven into your reply ("Oh, you *went* there yesterday? Nice!") instead of reading correction blocks aloud. Save detailed Czech explanations for the session summary.
     `;
     correctionFormat = "\n[💡 Correction (in Czech) — only for clear errors]";
   } else if (strictness <= 8) {
@@ -312,6 +313,7 @@ export const getSystemInstruction = (level: string, strictness: number = 5, enab
       - Catch most mistakes including articles, prepositions, tense errors, and word choice.
       - Provide "💡 Corrections" at the end with Czech explanations for each error.
       - Also suggest better/more natural phrasing where appropriate.
+      - IN SPOKEN CONVERSATION: prefer short RECASTS woven into your reply ("Oh, you *went* there yesterday? Nice!") instead of reading correction blocks aloud. Save detailed Czech explanations for the session summary.
     `;
     correctionFormat = "\n[💡 Correction (in Czech) — thorough]";
   } else {
