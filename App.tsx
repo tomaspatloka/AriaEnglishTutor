@@ -170,7 +170,9 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const voiceActive = isListening || liveRuntimeState.isUserTalking || liveRuntimeState.isSpeaking;
+    // P0-5: čas, kdy mluví Aria (isSpeaking), se NEpočítá žákovi — měříme jen reálné
+    // mluvení žáka (mikrofon / detekce hlasu). Jinak metrika „Čas mluvení" nadhodnocuje.
+    const voiceActive = isListening || liveRuntimeState.isUserTalking;
     if (voiceActive && voiceActiveStartedAtRef.current === null) {
       voiceActiveStartedAtRef.current = Date.now();
       return;
@@ -179,7 +181,7 @@ function App() {
       speakingMsRef.current += Date.now() - voiceActiveStartedAtRef.current;
       voiceActiveStartedAtRef.current = null;
     }
-  }, [isListening, liveRuntimeState.isUserTalking, liveRuntimeState.isSpeaking]);
+  }, [isListening, liveRuntimeState.isUserTalking]);
 
   const resetSessionTracking = () => {
     sessionStartedAtRef.current = Date.now();
@@ -194,7 +196,7 @@ function App() {
     setSettings(prev => ({ ...prev, interactionMode: 'reading' }));
   };
 
-  const exitReadingMode = (session?: { messages: Message[]; startedAt: number }) => {
+  const exitReadingMode = (session?: { messages: Message[]; startedAt: number; userTalkingMs: number }) => {
     // Obnov předchozí mód synchronně, ať UX nezdrží čekání na summary.
     setSettings(prev => ({ ...prev, interactionMode: prevInteractionModeRef.current }));
     // Progress zápis jen když student reálně mluvil (audit P1: napojit Reading na historii).
@@ -205,7 +207,7 @@ function App() {
     }
   };
 
-  const finalizeReadingSession = async (session: { messages: Message[]; startedAt: number }) => {
+  const finalizeReadingSession = async (session: { messages: Message[]; startedAt: number; userTalkingMs: number }) => {
     if (isSummarizingRef.current) return;
     isSummarizingRef.current = true;
     setIsSummarizing(true);
@@ -219,9 +221,9 @@ function App() {
         endedAt,
         mode: 'reading',
         durationMs,
-        // Čtení nahlas JE mluvení → celá délka session se počítá jako praktický čas
-        // (reading mód neměří voice-active ms zvlášť; přesné WPM/scoring je v1.8).
-        speakingMs: durationMs,
+        // P0-5: poctivý čas — jen reálné mluvení žáka (ReadingModeView měří userTalkingMs
+        // přes detekci hlasu), NE celá délka session (ta zahrnuje i čas, kdy čte Aria).
+        speakingMs: Math.max(0, session.userTalkingMs),
         correctionCount: getCorrectionCount(session.messages),
         summary,
       };

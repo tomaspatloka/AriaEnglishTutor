@@ -7,7 +7,7 @@ import PhotoCaptureSheet from './PhotoCaptureSheet';
 
 interface ReadingModeViewProps {
   settings: AppSettings;
-  onExit: (session?: { messages: Message[]; startedAt: number }) => void;
+  onExit: (session?: { messages: Message[]; startedAt: number; userTalkingMs: number }) => void;
   vocabList: VocabularyEntry[];
   onVocabChange: (entries: VocabularyEntry[]) => void;
   onOpenVocabModal: () => void;
@@ -61,6 +61,28 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   // Začátek čtecí session — pro progress zápis (audit P1). Set při prvním connectu.
   const readingStartedAtRef = useRef<number>(0);
+
+  // P0-5: žák mluví, když je spojení živé, Aria nemluví/nepauzuje a mikrofon zachytí hlas.
+  const isUserTalking = isConnected && !isSpeaking && !isPaused && volumeLevel > 0.03;
+
+  // P0-5: akumulace POCTIVÉHO času mluvení žáka (ne celé délky session, ta zahrnuje i Ariu).
+  // Měříme přes ref na náběžné/sestupné hraně isUserTalking — NE přes volumeLevel dependency
+  // (ten se mění ~60×/s). Stejný vzor jako voiceActiveStartedAtRef v App.tsx.
+  const userTalkingMsRef = useRef(0);
+  const talkingStartedAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (isUserTalking && talkingStartedAtRef.current === null) {
+      talkingStartedAtRef.current = Date.now();
+    } else if (!isUserTalking && talkingStartedAtRef.current !== null) {
+      userTalkingMsRef.current += Date.now() - talkingStartedAtRef.current;
+      talkingStartedAtRef.current = null;
+    }
+  }, [isUserTalking]);
+
+  const getCurrentUserTalkingMs = () =>
+    talkingStartedAtRef.current !== null
+      ? userTalkingMsRef.current + (Date.now() - talkingStartedAtRef.current)
+      : userTalkingMsRef.current;
 
   // Zaznamenej start session jakmile se Live spojení poprvé naváže
   useEffect(() => {
@@ -178,14 +200,12 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
 
   const handleExit = () => {
     if (isConnected || isConnecting) disconnect();
-    // Předej čtecí log + čas startu nahoru, ať App vytvoří progress zápis (mode='reading').
+    // Předej čtecí log + čas startu + poctivý čas mluvení nahoru (audit P1 + P0-5).
     const session = conversationLog.length > 0 && readingStartedAtRef.current > 0
-      ? { messages: conversationLog, startedAt: readingStartedAtRef.current }
+      ? { messages: conversationLog, startedAt: readingStartedAtRef.current, userTalkingMs: getCurrentUserTalkingMs() }
       : undefined;
     onExit(session);
   };
-
-  const isUserTalking = isConnected && !isSpeaking && !isPaused && volumeLevel > 0.03;
 
   const getStatusText = () => {
     if (error) return null;
