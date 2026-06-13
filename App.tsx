@@ -11,7 +11,8 @@ import AvatarView from './components/AvatarView';
 import ReadingModeView from './components/ReadingModeView';
 import ProgressModal from './components/ProgressModal';
 import VocabularyModal from './components/VocabularyModal';
-import { loadVocabulary, extractVocabFromTranscript, addVocabularyWordWithDefinition, buildFocusWords } from './utils/vocabularyUtils';
+import { loadVocabulary, extractVocabFromTranscript, addVocabularyWordWithDefinition, buildFocusWords, countDueForRefresh } from './utils/vocabularyUtils';
+import { getTodayMinutes, getDailyGoal, setDailyGoal } from './utils/dailyGoalUtils';
 import { mergeSummaryIntoProfile, getRecurringErrorStrings } from './utils/learnerProfileUtils';
 import { extractLevelVerdict } from './utils/levelUtils';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
@@ -76,6 +77,7 @@ function App() {
   const [levelToast, setLevelToast] = useState<string | null>(null); // P0-3: TEST_ME verdikt
   const levelToastTimerRef = useRef<number | null>(null);
   useEffect(() => () => { if (levelToastTimerRef.current) window.clearTimeout(levelToastTimerRef.current); }, []);
+  const [dailyGoal, setDailyGoalState] = useState<number>(() => getDailyGoal()); // P0-4
 
   const prevInteractionModeRef = useRef<AppSettings['interactionMode']>(settings.interactionMode);
   const sessionStartedAtRef = useRef<number>(Date.now());
@@ -128,6 +130,11 @@ function App() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const progressStats = useMemo(() => getProgressStats(lessonHistory), [lessonHistory]);
+
+  // P0-4: dnešní minuty (z historie, single source of truth) + due slovíčka pro hlavní cue.
+  const todayMinutes = getTodayMinutes(lessonHistory);
+  const dueVocabCount = countDueForRefresh(vocabList);
+  const goalMet = todayMinutes >= dailyGoal;
 
   const {
     isListening,
@@ -763,6 +770,8 @@ Return to normal English tutor behavior in your next response.`;
         currentSettings={settings}
         onSave={handleSettingsSave}
         onRestartSession={restartSessionNow}
+        dailyGoal={dailyGoal}
+        onDailyGoalChange={(m) => { setDailyGoal(m); setDailyGoalState(m); }}
       />
 
       <ProgressModal
@@ -806,6 +815,19 @@ Return to normal English tutor behavior in your next response.`;
         </div>
 
         <div className="flex items-center gap-2">
+          {/* P0-4: Streak + denní cíl chip — klik otevře Progress. Zezelená při splnění cíle. */}
+          <button
+            onClick={() => setShowProgress(true)}
+            title="Denní cíl a streak"
+            className={`hidden xs:flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-black transition active:scale-95 ${
+              goalMet ? 'bg-emerald-400/25 text-emerald-100 ring-1 ring-emerald-300/40' : 'bg-white/10 text-white/80 hover:bg-white/20'
+            }`}
+          >
+            <span>🔥 {progressStats.streakDays}</span>
+            <span className="opacity-50">·</span>
+            <span>{todayMinutes}/{dailyGoal}m</span>
+          </button>
+
           {/* Visualizer in header (only for Legacy mode since Live mode has full avatar) */}
           {isSpeaking && !settings.showAvatarMode && settings.interactionMode === 'legacy' && (
             <div className="flex items-center gap-1 mr-2">
@@ -943,6 +965,8 @@ Return to normal English tutor behavior in your next response.`;
             toggleListening={toggleListening} // Legacy
             settings={settings}
             onLiveStateChange={setLiveRuntimeState}
+            idleInfo={{ today: todayMinutes, goal: dailyGoal, streak: progressStats.streakDays, due: dueVocabCount }}
+            onPracticeVocab={() => setShowVocabModal(true)}
           />
         ) : (
           <div className="max-w-3xl mx-auto flex flex-col">

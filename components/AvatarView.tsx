@@ -22,6 +22,8 @@ interface AvatarViewProps {
     isUserTalking: boolean;
     conversationMessages: Message[];
   }) => void;
+  idleInfo?: { today: number; goal: number; streak: number; due: number }; // P0-4
+  onPracticeVocab?: () => void;                                            // P0-4
 }
 
 const AvatarView: React.FC<AvatarViewProps> = ({ 
@@ -34,7 +36,9 @@ const AvatarView: React.FC<AvatarViewProps> = ({
   toggleListening: legacyToggleListening,
   settings,
   restartToken,
-  onLiveStateChange
+  onLiveStateChange,
+  idleInfo,
+  onPracticeVocab
 }) => {
   // 1. Initialize Live API Hook (always, but only used if mode is 'live-api')
   const {
@@ -350,6 +354,23 @@ const AvatarView: React.FC<AvatarViewProps> = ({
              <p className={`text-lg sm:text-xl font-bold leading-tight drop-shadow-lg transition-all duration-300 ${activeIsListening ? 'text-white' : 'text-slate-400'}`}>
                {displayedText}
              </p>
+             {/* P0-4: idle cue — denní progres + slovíčka k opakování (jen v klidovém stavu) */}
+             {!activeIsListening && !activeIsSpeaking && !activeError && idleInfo && (
+               <div className="flex flex-col items-center gap-2 mt-1.5">
+                 <p className="text-[11px] font-bold text-slate-500">
+                   Dnes {idleInfo.today}/{idleInfo.goal} min · 🔥 {idleInfo.streak}
+                   {idleInfo.due > 0 && ` · ↻ ${idleInfo.due} k opakování`}
+                 </p>
+                 {idleInfo.due > 0 && onPracticeVocab && (
+                   <button
+                     onClick={onPracticeVocab}
+                     className="px-3 py-1.5 bg-blue-500/20 text-blue-300 border border-blue-400/30 rounded-full text-xs font-bold hover:bg-blue-500/30 transition active:scale-95"
+                   >
+                     🎯 Procvičit slovíčka
+                   </button>
+                 )}
+               </div>
+             )}
              {/* Correction — amber/yellow, clearly distinct from main transcript */}
              {correctionText && (
                <div className="w-full mt-1 pt-1.5 border-t border-amber-400/30">

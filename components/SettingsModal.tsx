@@ -8,11 +8,13 @@ interface SettingsModalProps {
   currentSettings: AppSettings;
   onSave: (newSettings: AppSettings) => void;
   onRestartSession: (newSettings: AppSettings) => void | Promise<void>;
+  dailyGoal?: number;                       // P0-4 — denní cíl (mimo AppSettings, vlastní klíč)
+  onDailyGoalChange?: (minutes: number) => void;
 }
 
 const levels: EnglishLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentSettings, onSave, onRestartSession }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentSettings, onSave, onRestartSession, dailyGoal = 10, onDailyGoalChange }) => {
   const [settings, setSettings] = useState<AppSettings>(currentSettings);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isBlobUrl = (value: string | null | undefined): value is string =>
@@ -300,6 +302,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentS
             </div>
             <p className="text-[10px] text-gray-400 mt-2 px-1 italic">
               Platí pro Gemini Live mód. Pomalejší = srozumitelnější výuka (hlas zní mírně hlouběji).
+            </p>
+          </section>
+
+          {/* P0-4: denní cíl mluvení (5–60 min) — sleduje se chipem v hlavičce a na úvodní obrazovce */}
+          <section>
+            <div className="flex justify-between items-end mb-3 px-1">
+              <label className="block text-sm font-black text-gray-800 uppercase tracking-wider">
+                Denní cíl / Daily goal
+              </label>
+              <span className="text-emerald-600 font-black text-2xl leading-none">{dailyGoal} min</span>
+            </div>
+            <input
+              type="range" min="5" max="60" step="5"
+              value={dailyGoal}
+              onChange={(e) => onDailyGoalChange?.(parseInt(e.target.value))}
+              className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+            />
+            <div className="flex justify-between mt-2 px-1">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">5 min</span>
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">60 min</span>
+            </div>
+            <p className="text-[10px] text-gray-400 mt-2 px-1 italic">
+              Kolik minut denně chceš mluvit. Počítá se reálný čas tvého mluvení napříč lekcemi.
             </p>
           </section>
 
