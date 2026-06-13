@@ -238,14 +238,14 @@ export const PRESET_AVATARS = {
 import { Scenario } from './types';
 
 export const SCENARIOS: Scenario[] = [
-  { id: 'shopping', icon: '🛒', label: 'Shopping', labelCz: 'Nakupování', role: 'a shop assistant in a clothing/grocery store', context: 'The user is a customer shopping. Help them find items, discuss sizes/colors/prices, suggest alternatives, and handle checkout.' },
-  { id: 'restaurant', icon: '🍽️', label: 'Restaurant', labelCz: 'Restaurace', role: 'a waiter/waitress at a restaurant', context: 'The user is a guest at a restaurant. Take their order, recommend dishes, explain the menu, handle special requests and the bill.' },
+  { id: 'shopping', icon: '🛒', label: 'Shopping', labelCz: 'Nakupování', role: 'a shop assistant in a clothing/grocery store', context: 'The user is a customer shopping. Help them find items, discuss sizes/colors/prices, suggest alternatives, and handle checkout.', task: { goalCz: 'Najdi zboží ve své velikosti, zeptej se na cenu a zaplať', steps: ['ask for an item', 'ask about size and price', 'pay at the checkout'], keyPhrases: ['Do you have this in…?', 'How much is it?', "I'll take it"] } },
+  { id: 'restaurant', icon: '🍽️', label: 'Restaurant', labelCz: 'Restaurace', role: 'a waiter/waitress at a restaurant', context: 'The user is a guest at a restaurant. Take their order, recommend dishes, explain the menu, handle special requests and the bill.', task: { goalCz: 'Objednej jídlo, zeptej se na alergeny a požádej o účet', steps: ['order a meal', 'ask about allergens', 'ask for the bill'], keyPhrases: ["I'd like to order…", 'Does this contain…?', 'Could I have the bill, please?'] } },
   { id: 'travel', icon: '🧳', label: 'Traveling', labelCz: 'Cestování', role: 'a local travel guide or tourist info assistant', context: 'The user is a tourist asking for directions, recommendations, sightseeing tips, transport info, or hotel bookings.' },
   { id: 'airport', icon: '✈️', label: 'Airport', labelCz: 'Letiště', role: 'an airport check-in agent or gate attendant', context: 'The user is at an airport. Help with check-in, boarding passes, baggage, gate changes, delays, and customs.' },
   { id: 'police', icon: '👮', label: 'Police', labelCz: 'Policie', role: 'a police officer', context: 'The user needs to report something (lost item, theft, accident) or is stopped for a routine check. Be professional and helpful.' },
   { id: 'accident', icon: '🚗', label: 'Car Accident', labelCz: 'Dopravní nehoda', role: 'the other driver involved in a minor car accident', context: 'A minor fender bender has occurred. Exchange information, discuss what happened, deal with insurance details.' },
   { id: 'gas-station', icon: '⛽', label: 'Gas Station', labelCz: 'Tankování', role: 'a gas station attendant', context: 'The user needs to refuel, pay, ask about car wash, buy snacks, or get directions.' },
-  { id: 'doctor', icon: '🏥', label: 'Doctor', labelCz: 'Lékař', role: 'a doctor or GP at a medical clinic', context: 'The user is a patient describing symptoms. Ask about their condition, suggest treatment, explain medication, schedule follow-ups.' },
+  { id: 'doctor', icon: '🏥', label: 'Doctor', labelCz: 'Lékař', role: 'a doctor or GP at a medical clinic', context: 'The user is a patient describing symptoms. Ask about their condition, suggest treatment, explain medication, schedule follow-ups.', task: { goalCz: 'Popiš příznaky, zeptej se na léčbu a domluv kontrolu', steps: ['describe your symptoms', 'ask about treatment', 'schedule a follow-up'], keyPhrases: ['I have a pain in…', 'What should I do?', 'When should I come back?'] } },
   { id: 'hotel', icon: '🏨', label: 'Hotel', labelCz: 'Hotel', role: 'a hotel receptionist', context: 'The user is checking in/out, asking about amenities, room service, WiFi, complaints, or extending their stay.' },
   { id: 'pharmacy', icon: '💊', label: 'Pharmacy', labelCz: 'Lékárna', role: 'a pharmacist', context: 'The user needs medicine, has a prescription, or asks about over-the-counter remedies for common issues.' },
   { id: 'bank', icon: '🏦', label: 'Bank', labelCz: 'Banka', role: 'a bank teller', context: 'The user needs to open an account, exchange currency, report a lost card, or make a transfer.' },
@@ -267,7 +267,7 @@ BEHAVIOR:
 - When the user asks a question, answer as a real instructor would, then encourage them to try it
 - If the user struggles to express something, help them form the sentence correctly
 - Practice both asking questions AND understanding instructions
-- Periodically simulate instructor directions: "Now click on Insert > Mechanism > Servo Motor..." and ask the user to confirm they follow` },
+- Periodically simulate instructor directions: "Now click on Insert > Mechanism > Servo Motor..." and ask the user to confirm they follow`, task: { goalCz: 'Zeptej se instruktora na postup, nahlas chybu a požádej o zopakování kroku', steps: ['ask how to create a mechanism connection', 'report an error you got', 'ask the instructor to repeat a step'], keyPhrases: ['How do I create a…?', 'I get an error when…', 'Could you show that step again?'] } },
 ];
 
 export const getSystemInstruction = (level: string, strictness: number = 5, enableTranslation: boolean = false, scenario?: Scenario | null, focusWords: string[] = [], recurringErrors: string[] = []) => {
@@ -360,6 +360,9 @@ them — create natural moments where the student must use them.
 - Start the conversation in character (e.g., greet the customer, ask how you can help).
 - Use vocabulary and phrases typical for this situation.
 - Keep the corrections (if any) separate — do NOT break character to correct, add them at the end.
+${scenario.task ? `
+**TASK FOR THIS SESSION:** The student must accomplish: ${scenario.task.steps.join('; ')}.
+Guide the situation so these naturally come up. Do not check them off aloud.` : ''}
 ` : '';
 
   return `

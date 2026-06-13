@@ -308,7 +308,8 @@ function App() {
     isSummarizingRef.current = true;
     setIsSummarizing(true);
     try {
-      const summary = await generateSessionSummary(sessionMessages);
+      // P1-9: u task-based scénáře vyhodnoť splnění kroků.
+      const summary = await generateSessionSummary(sessionMessages, activeScenario?.task?.steps);
       setLatestSummary(summary);
       setProgressNotice(null);
       // P0-1: agreguj opakované chyby žáka do profilu (paměť tutora napříč sessions).
@@ -838,6 +839,7 @@ Return to normal English tutor behavior in your next response.`;
         onClose={() => setShowScenarios(false)}
         activeScenarioId={settings.activeScenario}
         onSelect={handleScenarioSelect}
+        onSpeak={speakManual}
       />
 
       {/* Header */}

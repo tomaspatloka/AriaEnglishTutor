@@ -79,11 +79,18 @@ const extractJson = (text: string): any | null => {
   }
 };
 
-export const generateSessionSummary = async (messages: Message[]): Promise<SessionSummary> => {
+export const generateSessionSummary = async (messages: Message[], taskSteps?: string[]): Promise<SessionSummary> => {
   const transcript = messages
     .slice(-40)
     .map(m => `${m.role === 'user' ? 'USER' : 'ARIA'}: ${m.text}`)
     .join('\n');
+
+  // P1-9: u task-based scénářů vyhodnoť splnění kroků.
+  const hasTask = Array.isArray(taskSteps) && taskSteps.length > 0;
+  const taskBlock = hasTask ? `,
+  "taskCompleted": [${taskSteps!.map(() => 'true').join(', ')}]` : '';
+  const taskRule = hasTask ? `
+- taskCompleted = one boolean per task step (in order), did the student accomplish it? Steps: ${JSON.stringify(taskSteps)}` : '';
 
   const prompt = `
 Create a short Czech summary for an English lesson.
@@ -92,7 +99,7 @@ Return ONLY valid JSON:
   "strengths": ["...", "...", "..."],
   "commonErrors": ["...", "...", "..."],
   "practiceSentences": ["...", "...", "..."],
-  "errorTags": [{"tag": "past-tense", "example": "I goed there"}]
+  "errorTags": [{"tag": "past-tense", "example": "I goed there"}]${taskBlock}
 }
 
 Rules:
@@ -103,7 +110,7 @@ Rules:
 - errorTags = 0-3 machine-readable error categories. "tag" MUST be one of EXACTLY these:
   past-tense, present-perfect, articles, prepositions, word-order, plurals, pronouns,
   vocabulary-choice, conditionals, question-formation, pronunciation, other.
-  "example" = the student's actual erroneous phrase (English). If unsure, use "other".
+  "example" = the student's actual erroneous phrase (English). If unsure, use "other".${taskRule}
 
 Transcript:
 ${transcript}
@@ -125,11 +132,16 @@ ${transcript}
           .slice(0, 3)
           .map((e: any) => ({ tag: String(e.tag), example: typeof e.example === 'string' ? e.example : '' }))
       : [];
+    // P1-9: taskResults jen když byl task zadán; chybějící/krátké pole → false.
+    const taskResults = hasTask
+      ? taskSteps!.map((step, i) => ({ step, done: Array.isArray(parsed.taskCompleted) ? !!parsed.taskCompleted[i] : false }))
+      : undefined;
     return {
       strengths: parsed.strengths.slice(0, 3).map((x: any) => String(x)),
       commonErrors: parsed.commonErrors.slice(0, 3).map((x: any) => String(x)),
       practiceSentences: parsed.practiceSentences.slice(0, 3).map((x: any) => String(x)),
       errorTags,
+      ...(taskResults ? { taskResults } : {}),
     };
   }
 

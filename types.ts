@@ -14,6 +14,13 @@ export type AvatarType = 'virtual' | 'preset-female' | 'preset-male' | 'custom';
 
 export type InteractionMode = 'live-api' | 'legacy' | 'reading';
 
+// P1-9: úkol pro task-based scénář
+export interface ScenarioTask {
+  goalCz: string;        // cíl česky (zobrazí se před startem)
+  steps: string[];       // kroky anglicky (pro prompt + checklist)
+  keyPhrases: string[];  // 3–5 frází k ukázání před startem
+}
+
 export interface Scenario {
   id: string;
   icon: string;
@@ -21,6 +28,7 @@ export interface Scenario {
   labelCz: string;      // Czech name
   role: string;          // What Aria plays (e.g. "shop assistant")
   context: string;       // Situation description for system prompt
+  task?: ScenarioTask;   // P1-9: volitelný úkol (jen 4 scénáře v MVP)
 }
 
 export interface AppSettings {
@@ -50,6 +58,8 @@ export interface SessionSummary {
   // P0-1: strojově zpracovatelné tagy chyb (uzavřená taxonomie) pro learner profile.
   // commonErrors (české stringy) zůstává pro zobrazení; errorTags jsou pro agregaci.
   errorTags?: { tag: string; example: string }[];
+  // P1-9: výsledek splnění kroků úkolu (jen u task-based scénářů).
+  taskResults?: { step: string; done: boolean }[];
 }
 
 export interface LessonHistoryEntry {

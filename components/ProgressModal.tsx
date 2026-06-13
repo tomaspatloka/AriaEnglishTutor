@@ -157,6 +157,19 @@ const ProgressModal: React.FC<ProgressModalProps> = ({
                     </button>
                   )}
                 </div>
+                {/* P1-9: checklist splnění úkolu (task-based scénář) */}
+                {latestSummary.taskResults && latestSummary.taskResults.length > 0 && (
+                  <div>
+                    <p className="font-black text-amber-700 mb-1">🎯 Úkol scénáře</p>
+                    <ul className="space-y-1 text-gray-700">
+                      {latestSummary.taskResults.map((r, idx) => (
+                        <li key={`t-${idx}`} className={r.done ? 'text-emerald-700' : 'text-gray-400'}>
+                          {r.done ? '✅' : '⬜'} {r.step}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="mt-3 text-xs text-gray-500">Summary zatim neni k dispozici.</p>
