@@ -79,6 +79,9 @@ function App() {
   const prevLiveConnectedRef = useRef(false);
   const isSummarizingRef = useRef(false);
   const processedLiveMsgCountRef = useRef(0);
+  // P0-6: poslední průběžně nahlášený stav reading session — aby exit přes header (📚 ikona),
+  // který nepředá session jako argument, neztratil data a stihl zápis do historie.
+  const readingSessionRef = useRef<{ messages: Message[]; startedAt: number; userTalkingMs: number } | null>(null);
 
   // PWA Install Prompt
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -196,15 +199,22 @@ function App() {
     setSettings(prev => ({ ...prev, interactionMode: 'reading' }));
   };
 
+  const handleReadingSessionUpdate = (session: { messages: Message[]; startedAt: number; userTalkingMs: number }) => {
+    // P0-6: ReadingModeView hlásí průběžně; ref drží nejnovější stav pro header-exit cestu.
+    readingSessionRef.current = session;
+  };
+
   const exitReadingMode = (session?: { messages: Message[]; startedAt: number; userTalkingMs: number }) => {
     // Obnov předchozí mód synchronně, ať UX nezdrží čekání na summary.
     setSettings(prev => ({ ...prev, interactionMode: prevInteractionModeRef.current }));
-    // Progress zápis jen když student reálně mluvil (audit P1: napojit Reading na historii).
-    // Array.isArray guard: exitReadingMode jde i z header tlačítka, které předá MouseEvent.
-    if (session && Array.isArray(session.messages)
-        && session.messages.some(m => m.role === 'user' && m.text.trim().length > 0)) {
-      finalizeReadingSession(session);
+    // „← Zpět" cesta předá session přímo; header 📚 cesta volá bez argumentu → fallback na ref (P0-6).
+    // MouseEvent z onClick nemá pole messages → neprojde guardem, použije se ref.
+    const effective = (session && Array.isArray(session.messages)) ? session : readingSessionRef.current;
+    if (effective && Array.isArray(effective.messages)
+        && effective.messages.some(m => m.role === 'user' && m.text.trim().length > 0)) {
+      finalizeReadingSession(effective);
     }
+    readingSessionRef.current = null; // reset po opuštění reading módu
   };
 
   const finalizeReadingSession = async (session: { messages: Message[]; startedAt: number; userTalkingMs: number }) => {
@@ -873,6 +883,7 @@ Return to normal English tutor behavior in your next response.`;
           <ReadingModeView
             settings={settings}
             onExit={exitReadingMode}
+            onSessionUpdate={handleReadingSessionUpdate}
             vocabList={vocabList}
             onVocabChange={setVocabList}
             onOpenVocabModal={() => setShowVocabModal(true)}

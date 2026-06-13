@@ -8,12 +8,13 @@ import PhotoCaptureSheet from './PhotoCaptureSheet';
 interface ReadingModeViewProps {
   settings: AppSettings;
   onExit: (session?: { messages: Message[]; startedAt: number; userTalkingMs: number }) => void;
+  onSessionUpdate?: (session: { messages: Message[]; startedAt: number; userTalkingMs: number }) => void;
   vocabList: VocabularyEntry[];
   onVocabChange: (entries: VocabularyEntry[]) => void;
   onOpenVocabModal: () => void;
 }
 
-const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, vocabList, onVocabChange, onOpenVocabModal }) => {
+const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, onSessionUpdate, vocabList, onVocabChange, onOpenVocabModal }) => {
   // F1 — Settings menu state
   const [showMenu, setShowMenu] = useState(false);
   const [showTranscript, setShowTranscript] = useState(true);
@@ -177,6 +178,19 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, voc
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conversationLog]);
+
+  // P0-6: průběžně hlásit stav session nahoru. Header-exit (📚) volá exitReadingMode bez
+  // argumentu → App si vezme tento nejnovější snapshot z refu místo ztráty dat.
+  useEffect(() => {
+    if (!onSessionUpdate) return;
+    if (conversationLog.length > 0 && readingStartedAtRef.current > 0) {
+      onSessionUpdate({
+        messages: conversationLog,
+        startedAt: readingStartedAtRef.current,
+        userTalkingMs: getCurrentUserTalkingMs(),
+      });
+    }
+  }, [conversationLog, onSessionUpdate]);
 
   const handleQuickAdd = () => {
     const trimmed = quickAddWord.trim();
