@@ -20,9 +20,11 @@ interface VocabularyModalProps {
   onClose: () => void;
   vocabList: VocabularyEntry[];
   onVocabChange: (entries: VocabularyEntry[]) => void;
+  onSpeak?: (text: string) => void; // P1-8: TTS slova z karty (hlas dle settings, prop z App)
 }
 
 type ViewMode = 'list' | 'recall' | 'recall-summary';
+type RecallDirection = 'en-cz' | 'cz-en' | 'mix'; // P1-8: směr flashcards
 
 // Maličká pomocná komponenta — bezpečně vrátí do listu bez setState-during-render.
 const RecallEmptyGuard: React.FC<{ onEmpty: () => void }> = ({ onEmpty }) => {
@@ -37,7 +39,7 @@ const escapeHtml = (s: string) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, vocabList, onVocabChange }) => {
+const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, vocabList, onVocabChange, onSpeak }) => {
   // List state
   const [newWord, setNewWord] = useState('');
   const [customMeaning, setCustomMeaning] = useState('');
@@ -63,6 +65,7 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
   const [queueIdx, setQueueIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [sessionResult, setSessionResult] = useState<RecallSessionResult>({ total: 0, correct: 0, incorrect: 0, skipped: 0 });
+  const [recallDirection, setRecallDirection] = useState<RecallDirection>('mix'); // P1-8: default Mix
 
   // Autofocus na input při otevření prázdného listu
   useEffect(() => {
@@ -346,6 +349,10 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
       );
     }
     const c = statusColors(current.status);
+    // P1-8: pro Mix se směr odvozuje deterministicky z indexu (stabilní mezi flipy).
+    const cardDir: RecallDirection = recallDirection === 'mix'
+      ? (queueIdx % 2 === 0 ? 'en-cz' : 'cz-en')
+      : recallDirection;
     return (
       <>
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm" onClick={onClose} />
@@ -379,22 +386,78 @@ const VocabularyModal: React.FC<VocabularyModalProps> = ({ isOpen, onClose, voca
           </div>
 
           {/* Flashcard */}
-          <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
+          <div className="flex-1 flex flex-col items-center justify-center px-6 gap-5">
+            {/* P1-8: přepínač směru — EN→CZ (poznávání) / CZ→EN (produkce) / Mix */}
+            <div className="flex items-center gap-1 bg-white/5 rounded-full p-1 text-[10px] font-black">
+              {(['en-cz', 'cz-en', 'mix'] as RecallDirection[]).map(dir => (
+                <button
+                  key={dir}
+                  onClick={() => { setRecallDirection(dir); setFlipped(false); }}
+                  className={`px-3 py-1 rounded-full transition ${recallDirection === dir ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-white'}`}
+                >
+                  {dir === 'en-cz' ? 'EN→CZ' : dir === 'cz-en' ? 'CZ→EN' : 'Mix'}
+                </button>
+              ))}
+            </div>
             <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${c.badgeBg} ${c.badgeText}`}>
               {statusLabel(current.status)}
             </span>
             <button
               onClick={() => setFlipped(f => !f)}
               className="w-full max-w-sm min-h-[180px] bg-gradient-to-br from-slate-800 to-slate-700 border border-white/10 rounded-2xl shadow-2xl flex flex-col items-center justify-center px-6 py-8 hover:from-slate-700 hover:to-slate-600 active:scale-[0.99] transition"
-              aria-label={flipped ? 'Skrýt překlad' : 'Odhalit překlad'}
+              aria-label={flipped ? 'Skrýt' : 'Odhalit'}
             >
-              <p className="text-white font-black text-3xl text-center leading-tight">{current.word}</p>
-              {flipped ? (
-                <p className="text-emerald-300 text-base font-semibold mt-4 text-center">
-                  {current.definition || <span className="italic text-slate-500">(bez překladu)</span>}
-                </p>
+              {cardDir === 'cz-en' ? (
+                /* CZ→EN produkční směr: ukáže překlad, žák vybaví anglické slovo */
+                <>
+                  <p className="text-emerald-300 font-black text-2xl text-center leading-tight">
+                    {current.definition || <span className="italic text-slate-500 text-base">(bez překladu — klepni)</span>}
+                  </p>
+                  {flipped ? (
+                    <div className="mt-4 flex flex-col items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <p className="text-white font-black text-3xl text-center">{current.word}</p>
+                        {onSpeak && (
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => { e.stopPropagation(); onSpeak(current.word); }}
+                            className="text-2xl hover:scale-110 transition cursor-pointer"
+                            aria-label="Přehrát výslovnost"
+                          >🔊</span>
+                        )}
+                      </div>
+                      {current.contextSentence && (
+                        <p className="text-slate-400 text-sm italic text-center">„{current.contextSentence}"</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-slate-500 text-xs mt-4 italic">Klepni pro anglické slovo</p>
+                  )}
+                </>
               ) : (
-                <p className="text-slate-500 text-xs mt-4 italic">Klepni pro odhalení</p>
+                /* EN→CZ poznávací směr (výchozí) */
+                <>
+                  <div className="flex items-center gap-2">
+                    <p className="text-white font-black text-3xl text-center leading-tight">{current.word}</p>
+                    {onSpeak && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => { e.stopPropagation(); onSpeak(current.word); }}
+                        className="text-xl hover:scale-110 transition cursor-pointer"
+                        aria-label="Přehrát výslovnost"
+                      >🔊</span>
+                    )}
+                  </div>
+                  {flipped ? (
+                    <p className="text-emerald-300 text-base font-semibold mt-4 text-center">
+                      {current.definition || <span className="italic text-slate-500">(bez překladu)</span>}
+                    </p>
+                  ) : (
+                    <p className="text-slate-500 text-xs mt-4 italic">Klepni pro odhalení</p>
+                  )}
+                </>
               )}
             </button>
             {current.correctCount + current.incorrectCount > 0 && (

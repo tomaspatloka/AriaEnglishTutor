@@ -98,7 +98,7 @@ export const saveVocabulary = (entries: VocabularyEntry[]): void => {
   localStorage.setItem(VOCAB_KEY, JSON.stringify(entries));
 };
 
-export const addVocabularyWord = (word: string, definition?: string): VocabularyEntry[] => {
+export const addVocabularyWord = (word: string, definition?: string, contextSentence?: string): VocabularyEntry[] => {
   const entries = loadVocabulary();
   const normalized = word.toLowerCase().trim();
   if (!normalized || entries.some(e => e.word.toLowerCase() === normalized)) return entries;
@@ -115,6 +115,8 @@ export const addVocabularyWord = (word: string, definition?: string): Vocabulary
     srsLevel: 0,
     dueAt: now + intervalMs(0),
     consecutiveCorrect: 0,
+    // P1-8: věta, ve které slovo padlo (pro produkční flashcards CZ→EN).
+    contextSentence: contextSentence?.trim() || undefined,
   };
   const updated = [newEntry, ...entries];
   saveVocabulary(updated);
@@ -142,9 +144,10 @@ export const updateVocabularyDefinition = (id: string, definition: string): Voca
 export const addVocabularyWordWithDefinition = async (
   word: string,
   getDefinition: () => Promise<string>,
-  onUpdate: (entries: VocabularyEntry[]) => void
+  onUpdate: (entries: VocabularyEntry[]) => void,
+  contextSentence?: string
 ): Promise<void> => {
-  const afterAdd = addVocabularyWord(word);
+  const afterAdd = addVocabularyWord(word, undefined, contextSentence);
   onUpdate(afterAdd);
   try {
     const definition = await getDefinition();
@@ -159,10 +162,11 @@ export const addVocabularyWordWithDefinition = async (
   }
 };
 
-export const extractVocabFromTranscript = (transcript: string): string[] => {
-  const words: string[] = [];
+// P1-8: vrací nově i kontextovou větu (±60 znaků kolem matche) pro produkční flashcards.
+// Dedup na úrovni slova (lowercase); první výskyt určuje uloženou větu.
+export const extractVocabFromTranscript = (transcript: string): { word: string; sentence: string }[] => {
+  const found = new Map<string, string>(); // word(lower) → context sentence
   for (const pattern of VOCAB_PATTERNS) {
-    // Použijeme globální variantu pro vícenásobné match v jednom přepisu
     const globalPattern = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g');
     let m: RegExpExecArray | null;
     while ((m = globalPattern.exec(transcript)) !== null) {
@@ -171,10 +175,13 @@ export const extractVocabFromTranscript = (transcript: string): string[] => {
       const lower = w.toLowerCase();
       if (lower.length < 3) continue;
       if (TRIGGER_BLACKLIST.has(lower)) continue;
-      words.push(w);
+      if (found.has(lower)) continue;
+      const start = Math.max(0, m.index - 60);
+      const end = Math.min(transcript.length, m.index + (m[0]?.length ?? 0) + 60);
+      found.set(lower, transcript.slice(start, end).trim());
     }
   }
-  return [...new Set(words.map(w => w.toLowerCase()))];
+  return [...found.entries()].map(([word, sentence]) => ({ word, sentence }));
 };
 
 // ─── Recall mode helpers ─────────────────────────────────────────────

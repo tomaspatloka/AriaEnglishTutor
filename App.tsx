@@ -365,8 +365,8 @@ function App() {
     for (const msg of newMsgs) {
       if (msg.role !== 'user') continue;
       const detected = extractVocabFromTranscript(msg.text);
-      for (const word of detected) {
-        addVocabularyWordWithDefinition(word, () => translateWord(word), setVocabList);
+      for (const { word, sentence } of detected) {
+        addVocabularyWordWithDefinition(word, () => translateWord(word), setVocabList, sentence);
       }
     }
   }, [liveRuntimeState.conversationMessages]);
@@ -638,8 +638,8 @@ Return to normal English tutor behavior in your next response.`;
     setIsLoading(true);
 
     const detectedVocab = extractVocabFromTranscript(userText);
-    for (const word of detectedVocab) {
-      addVocabularyWordWithDefinition(word, () => translateWord(word), setVocabList);
+    for (const { word, sentence } of detectedVocab) {
+      addVocabularyWordWithDefinition(word, () => translateWord(word), setVocabList, sentence);
     }
 
     try {
@@ -807,6 +807,7 @@ Return to normal English tutor behavior in your next response.`;
         onClose={() => setShowVocabModal(false)}
         vocabList={vocabList}
         onVocabChange={setVocabList}
+        onSpeak={speakManual}
       />
 
       <ScenarioSelector

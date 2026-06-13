@@ -155,21 +155,22 @@ const ReadingModeView: React.FC<ReadingModeViewProps> = ({ settings, onExit, onS
 
     // Filtruj na opravdu NOVÁ slova (ne ta, co už ve slovníčku jsou) — abychom neukazovali toast pro duplicit
     const existingLower = new Set(vocabList.map(e => e.word.toLowerCase()));
-    const trulyNew = detected.filter(w => !existingLower.has(w.toLowerCase()));
+    const trulyNew = detected.filter(d => !existingLower.has(d.word.toLowerCase()));
 
-    for (const word of detected) {
+    for (const { word, sentence } of detected) {
       addVocabularyWordWithDefinition(
         word,
         () => translateWord(word),
-        onVocabChange
+        onVocabChange,
+        sentence // P1-8: kontextová věta z reading přepisu
       );
     }
 
     if (trulyNew.length > 0) {
       // Pokud chytlo víc najednou, zobrazíme „rope +2" formát; jinak jen slovo
       const display = trulyNew.length === 1
-        ? trulyNew[0]
-        : `${trulyNew[0]} +${trulyNew.length - 1}`;
+        ? trulyNew[0].word
+        : `${trulyNew[0].word} +${trulyNew.length - 1}`;
       showAddedToast(display);
     }
   }, [inputTranscript]);
