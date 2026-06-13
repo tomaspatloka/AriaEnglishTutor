@@ -14,6 +14,7 @@ import VocabularyModal from './components/VocabularyModal';
 import DrillSheet from './components/DrillSheet';
 import { loadVocabulary, extractVocabFromTranscript, addVocabularyWordWithDefinition, buildFocusWords, countDueForRefresh } from './utils/vocabularyUtils';
 import { getTodayMinutes, getDailyGoal, setDailyGoal } from './utils/dailyGoalUtils';
+import { saveTranscript } from './utils/transcriptUtils';
 import { mergeSummaryIntoProfile, getRecurringErrorStrings } from './utils/learnerProfileUtils';
 import { extractLevelVerdict } from './utils/levelUtils';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
@@ -258,6 +259,7 @@ function App() {
         summary,
       };
       setLessonHistory(appendLessonHistory(entry));
+      saveTranscript({ id: entry.id, endedAt, mode: 'reading', messages: session.messages }); // P2-14
       setShowProgress(true);
     } catch (error) {
       console.error('Failed to summarize reading session', error);
@@ -328,6 +330,7 @@ function App() {
 
       const updatedHistory = appendLessonHistory(entry);
       setLessonHistory(updatedHistory);
+      saveTranscript({ id: entry.id, endedAt, mode: settings.interactionMode, messages: sessionMessages }); // P2-14
       return summary;
     } catch (error) {
       console.error('Failed to generate session summary', error);

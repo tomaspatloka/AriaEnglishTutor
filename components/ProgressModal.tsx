@@ -1,6 +1,7 @@
 import React from 'react';
 import { LessonHistoryEntry, ProgressStats, SessionSummary, EnglishLevel } from '../types';
 import { levelProgressPercent, lessonsAtCurrentLevel, shouldOfferRetest, TARGET_LEVEL } from '../utils/levelUtils';
+import { getTranscript } from '../utils/transcriptUtils';
 
 interface ProgressModalProps {
   isOpen: boolean;
@@ -177,22 +178,40 @@ const ProgressModal: React.FC<ProgressModalProps> = ({
           </section>
 
           <section>
-            <h3 className="text-sm font-black text-gray-900 mb-2">Posledni lekce</h3>
+            <h3 className="text-sm font-black text-gray-900 mb-2">Poslední lekce</h3>
             <div className="space-y-2">
-              {history.slice(0, 8).map((item) => (
-                <div key={item.id} className="rounded-2xl border border-gray-100 p-3 bg-white flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-black text-gray-800">
-                      {new Date(item.endedAt).toLocaleString()} - {item.mode === 'live-api' ? 'Live' : item.mode === 'reading' ? '📖 Reading' : 'Standard'}
-                    </p>
-                    <p className="text-[11px] text-gray-500">
-                      Delka: {formatMinutes(item.durationMs)} - Mluveni: {formatMinutes(item.speakingMs)} - Opravy: {item.correctionCount}
-                    </p>
+              {history.slice(0, 8).map((item) => {
+                const tr = getTranscript(item.id); // P2-14
+                return (
+                  <div key={item.id} className="rounded-2xl border border-gray-100 p-3 bg-white">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-black text-gray-800">
+                          {new Date(item.endedAt).toLocaleString()} - {item.mode === 'live-api' ? 'Live' : item.mode === 'reading' ? '📖 Reading' : 'Standard'}
+                        </p>
+                        <p className="text-[11px] text-gray-500">
+                          Délka: {formatMinutes(item.durationMs)} · Mluvení: {formatMinutes(item.speakingMs)} · Opravy: {item.correctionCount}
+                        </p>
+                      </div>
+                    </div>
+                    {/* P2-14: rozbalitelný přepis konverzace */}
+                    {tr && tr.messages.length > 0 && (
+                      <details className="mt-2">
+                        <summary className="text-[11px] font-bold text-blue-600 cursor-pointer select-none">Zobrazit přepis ({tr.messages.length})</summary>
+                        <div className="mt-2 space-y-1 max-h-48 overflow-y-auto border-t border-gray-100 pt-2">
+                          {tr.messages.map((m, i) => (
+                            <p key={i} className={`text-[11px] leading-snug ${m.role === 'user' ? 'text-gray-700' : 'text-blue-700'}`}>
+                              <span className="font-bold">{m.role === 'user' ? 'Ty' : 'Aria'}:</span> {m.text}
+                            </p>
+                          ))}
+                        </div>
+                      </details>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {history.length === 0 && (
-                <p className="text-xs text-gray-500">Historie je zatim prazdna.</p>
+                <p className="text-xs text-gray-500">Historie je zatím prázdná.</p>
               )}
             </div>
           </section>
