@@ -38,6 +38,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   interactionMode: 'live-api',
   activeScenario: null,
   speechRate: 1.0,
+  levelSetAt: Date.now(), // P1-11: migrace — staří uživatelé dostanou čas startu
 };
 
 // Simple ID generator
@@ -383,7 +384,7 @@ function App() {
     levelVerdictAppliedRef.current = true;
     setSettings(prev => {
       if (prev.level !== 'TEST_ME') return prev;
-      const ns = { ...prev, level: verdict };
+      const ns = { ...prev, level: verdict, levelSetAt: Date.now() }; // P1-11
       saveSettings(ns);
       return ns;
     });
@@ -407,7 +408,7 @@ function App() {
   const handleLevelSelect = async (level: EnglishLevel) => {
     if (isInitializingRef.current) return;
     isInitializingRef.current = true;
-    const newSettings = { ...settings, level };
+    const newSettings = { ...settings, level, levelSetAt: Date.now() }; // P1-11
     setSettings(newSettings);
     saveSettings(newSettings);
     setShowLevelSelector(false);
@@ -457,10 +458,15 @@ function App() {
     }
   }, [showLevelSelector, messages.length, settings.level, settings.correctionStrictness, settings.showCzechTranslation]);
 
-  const handleSettingsSave = async (newSettings: AppSettings) => {
+  const handleSettingsSave = async (incomingSettings: AppSettings) => {
     const prevLevel = settings.level;
     const prevStrictness = settings.correctionStrictness;
     const prevTranslation = settings.showCzechTranslation;
+
+    // P1-11: ruční změna úrovně v nastavení také aktualizuje levelSetAt (pro progresi/re-test).
+    const newSettings: AppSettings = prevLevel !== incomingSettings.level
+      ? { ...incomingSettings, levelSetAt: Date.now() }
+      : incomingSettings;
 
     setSettings(newSettings);
     saveSettings(newSettings);
@@ -805,6 +811,9 @@ Return to normal English tutor behavior in your next response.`;
         onStartDrill={latestSummary && latestSummary.practiceSentences.length > 0
           ? () => { setShowProgress(false); setShowDrill(true); }
           : undefined}
+        currentLevel={settings.level}
+        levelSetAt={settings.levelSetAt ?? 0}
+        onRetest={() => { setShowProgress(false); restartSessionNow({ ...settings, level: 'TEST_ME', levelSetAt: Date.now() }); }}
       />
 
       {/* P1-10: Drill na practice sentences ze session summary */}

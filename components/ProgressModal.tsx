@@ -1,5 +1,6 @@
 import React from 'react';
-import { LessonHistoryEntry, ProgressStats, SessionSummary } from '../types';
+import { LessonHistoryEntry, ProgressStats, SessionSummary, EnglishLevel } from '../types';
+import { levelProgressPercent, lessonsAtCurrentLevel, shouldOfferRetest, TARGET_LEVEL } from '../utils/levelUtils';
 
 interface ProgressModalProps {
   isOpen: boolean;
@@ -11,6 +12,9 @@ interface ProgressModalProps {
   stats: ProgressStats;
   notice: string | null;
   onStartDrill?: () => void; // P1-10: spustit drill na practice sentences
+  currentLevel?: EnglishLevel; // P1-11
+  levelSetAt?: number;         // P1-11
+  onRetest?: () => void;       // P1-11: spustit re-test úrovně
 }
 
 const formatMinutes = (ms: number) => `${Math.max(0, Math.round(ms / 60000))} min`;
@@ -32,8 +36,16 @@ const ProgressModal: React.FC<ProgressModalProps> = ({
   stats,
   notice,
   onStartDrill,
+  currentLevel,
+  levelSetAt = 0,
+  onRetest,
 }) => {
   if (!isOpen) return null;
+
+  // P1-11: progrese k cílovému B1 + nabídka re-testu po 10 lekcích na úrovni.
+  const lessonsHere = currentLevel ? lessonsAtCurrentLevel(history, levelSetAt) : 0;
+  const progressPct = currentLevel ? levelProgressPercent(currentLevel, lessonsHere) : 0;
+  const offerRetest = currentLevel ? shouldOfferRetest(currentLevel, lessonsHere) : false;
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4">
@@ -69,6 +81,31 @@ const ProgressModal: React.FC<ProgressModalProps> = ({
               <p className="text-sm font-black text-violet-800">{trendLabel(stats.correctionTrend)}</p>
             </div>
           </section>
+
+          {/* P1-11: progrese k cílovému B1 + nabídka re-testu */}
+          {currentLevel && currentLevel !== 'TEST_ME' && (
+            <section className="rounded-3xl border border-gray-100 p-4 bg-white">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-black text-gray-900">Postup k cíli {TARGET_LEVEL}</h3>
+                <span className="text-xs font-black text-emerald-700">{currentLevel} · {progressPct}%</span>
+              </div>
+              <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-emerald-400 to-blue-500 transition-all duration-500" style={{ width: `${progressPct}%` }} />
+              </div>
+              <p className="text-[11px] text-gray-500 mt-2">{lessonsHere} lekcí na úrovni {currentLevel}</p>
+              {offerRetest && onRetest && (
+                <div className="mt-3 flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-3 py-2">
+                  <p className="text-[11px] font-bold text-amber-800">{lessonsHere} lekcí na {currentLevel} — otestovat posun?</p>
+                  <button
+                    onClick={onRetest}
+                    className="px-3 py-1.5 bg-amber-500 text-white text-[11px] font-black rounded-xl hover:bg-amber-600 transition active:scale-95 whitespace-nowrap"
+                  >
+                    Přetestovat
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
 
           <section className="rounded-3xl border border-gray-100 p-4 bg-gray-50">
             <div className="flex items-center justify-between gap-3">
