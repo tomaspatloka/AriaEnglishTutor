@@ -1,5 +1,16 @@
-export const APP_VERSION = "v1.10.0";
+export const APP_VERSION = "v1.11.0";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.11.0",
+    date: "2026-06-13",
+    title: "Polish — přepisy lekcí a české UI",
+    changes: [
+      "Přepisy lekcí: v historii si u každé lekce rozbalíš celý přepis konverzace a přečteš, co jsi říkal (drží se posledních 10 lekcí).",
+      "Sjednocené české UI: opravená diakritika v přehledu (Zlepšení, Čas mluvení, dnů, Poslední lekce), stavové hlášky avataru česky.",
+      "Přidaná úroveň C2 do výběru úrovní (sjednoceno s nastavením).",
+      "Méně matoucí stav: klidový popisek už neříká Paused, ale Připraveno — nepleteš si ho se skutečnou pauzou.",
+    ],
+  },
   {
     version: "v1.10.0",
     date: "2026-06-13",
