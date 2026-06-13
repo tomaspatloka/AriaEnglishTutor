@@ -21,9 +21,9 @@ interface ProgressModalProps {
 const formatMinutes = (ms: number) => `${Math.max(0, Math.round(ms / 60000))} min`;
 
 const trendLabel = (trend: ProgressStats['correctionTrend']) => {
-  if (trend === 'improving') return 'Zlepseni';
-  if (trend === 'worsening') return 'Zhorseni';
-  if (trend === 'stable') return 'Stabilni';
+  if (trend === 'improving') return 'Zlepšení';
+  if (trend === 'worsening') return 'Zhoršení';
+  if (trend === 'stable') return 'Stabilní';
   return 'Nedostatek dat';
 };
 
@@ -54,7 +54,7 @@ const ProgressModal: React.FC<ProgressModalProps> = ({
         <div className="p-4 flex items-center justify-between sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-gray-100">
           <div>
             <h2 className="text-lg font-black text-gray-900">Session Progress</h2>
-            <p className="text-[11px] text-gray-500 font-semibold">Souhrn lekci a trend</p>
+            <p className="text-[11px] text-gray-500 font-semibold">Souhrn lekcí a trend</p>
           </div>
           <button onClick={onClose} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition active:scale-90">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
@@ -71,10 +71,10 @@ const ProgressModal: React.FC<ProgressModalProps> = ({
             </div>
             <div className="rounded-2xl bg-blue-50 border border-blue-100 p-3">
               <p className="text-[10px] uppercase font-black text-blue-600">Streak</p>
-              <p className="text-xl font-black text-blue-800">{stats.streakDays} dnu</p>
+              <p className="text-xl font-black text-blue-800">{stats.streakDays} dnů</p>
             </div>
             <div className="rounded-2xl bg-amber-50 border border-amber-100 p-3">
-              <p className="text-[10px] uppercase font-black text-amber-600">Cas mluveni</p>
+              <p className="text-[10px] uppercase font-black text-amber-600">Čas mluvení</p>
               <p className="text-xl font-black text-amber-800">{formatMinutes(stats.totalSpeakingMs)}</p>
             </div>
             <div className="rounded-2xl bg-violet-50 border border-violet-100 p-3">
@@ -111,15 +111,15 @@ const ProgressModal: React.FC<ProgressModalProps> = ({
           <section className="rounded-3xl border border-gray-100 p-4 bg-gray-50">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-sm font-black text-gray-900">Session summary po hovoru</h3>
-                <p className="text-[11px] text-gray-500">Co bylo dobre, chyby a vety na procviceni</p>
+                <h3 className="text-sm font-black text-gray-900">Shrnutí po hovoru</h3>
+                <p className="text-[11px] text-gray-500">Co bylo dobré, chyby a věty na procvičení</p>
               </div>
               <button
                 onClick={onGenerateSummary}
                 disabled={isGeneratingSummary}
                 className="px-3 py-2 rounded-xl bg-emerald-500 text-white text-xs font-black hover:bg-emerald-600 disabled:opacity-60"
               >
-                {isGeneratingSummary ? 'Generuji...' : 'Vytvorit summary'}
+                {isGeneratingSummary ? 'Generuji...' : 'Vytvořit shrnutí'}
               </button>
             </div>
 
@@ -132,19 +132,19 @@ const ProgressModal: React.FC<ProgressModalProps> = ({
             {latestSummary ? (
               <div className="mt-3 space-y-3 text-sm">
                 <div>
-                  <p className="font-black text-emerald-700 mb-1">Co bylo dobre</p>
+                  <p className="font-black text-emerald-700 mb-1">Co bylo dobré</p>
                   <ul className="space-y-1 text-gray-700">
                     {latestSummary.strengths.map((item, idx) => <li key={`s-${idx}`}>- {item}</li>)}
                   </ul>
                 </div>
                 <div>
-                  <p className="font-black text-rose-700 mb-1">3 nejcastejsi chyby</p>
+                  <p className="font-black text-rose-700 mb-1">3 nejčastější chyby</p>
                   <ul className="space-y-1 text-gray-700">
                     {latestSummary.commonErrors.map((item, idx) => <li key={`e-${idx}`}>- {item}</li>)}
                   </ul>
                 </div>
                 <div>
-                  <p className="font-black text-indigo-700 mb-1">3 vety k treninku</p>
+                  <p className="font-black text-indigo-700 mb-1">3 věty k tréninku</p>
                   <ul className="space-y-1 text-gray-700">
                     {latestSummary.practiceSentences.map((item, idx) => <li key={`p-${idx}`}>- {item}</li>)}
                   </ul>

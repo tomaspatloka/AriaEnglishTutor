@@ -11,6 +11,7 @@ const levels: { id: EnglishLevel; label: string; desc: string }[] = [
   { id: 'B1', label: 'B1 - Intermediate', desc: 'Standard input on familiar matters' },
   { id: 'B2', label: 'B2 - Upper Intermediate', desc: 'Complex texts & fluent conversation' },
   { id: 'C1', label: 'C1 - Advanced', desc: 'Flexible use for social & professional' },
+  { id: 'C2', label: 'C2 - Proficient', desc: 'Near-native, effortless understanding' },
 ];
 
 const LevelSelector: React.FC<LevelSelectorProps> = ({ onSelect }) => {

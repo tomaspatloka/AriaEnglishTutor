@@ -86,7 +86,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
     });
   }, [liveIsConnected, liveIsConnecting, liveIsSpeaking, networkSlow, liveUserTalking, conversationLog, onLiveStateChange]);
 
-  const [displayedText, setDisplayedText] = useState("Tap microphone to start conversation");
+  const [displayedText, setDisplayedText] = useState("Klepni na mikrofon a začni");
   const [czechTranslation, setCzechTranslation] = useState('');
   const [correctionText, setCorrectionText] = useState('');
   
@@ -107,7 +107,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
 
     if (isLiveMode && (liveIsConnected || liveIsConnecting)) {
       disconnect();
-      setDisplayedText("Session restarted. Tap microphone to reconnect.");
+      setDisplayedText("Session restartována. Klepni na mikrofon pro připojení.");
       setCzechTranslation('');
       return;
     }
@@ -115,7 +115,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
     if (!isLiveMode && legacyIsListening) {
       legacyToggleListening();
     }
-    setDisplayedText("Session restarted.");
+    setDisplayedText("Session restartována.");
     setCzechTranslation('');
   }, [restartToken, isLiveMode, liveIsConnected, liveIsConnecting, legacyIsListening, disconnect, legacyToggleListening]);
 
@@ -135,9 +135,9 @@ const AvatarView: React.FC<AvatarViewProps> = ({
     if (isLiveMode) {
         if (liveIsConnected || liveIsConnecting) {
             disconnect();
-            setDisplayedText(liveIsConnecting ? "Connection cancelled." : "Conversation ended.");
+            setDisplayedText(liveIsConnecting ? "Připojení zrušeno." : "Konverzace ukončena.");
         } else {
-            setDisplayedText("Connecting to Aria...");
+            setDisplayedText("Připojuji k Arii...");
             connect();
         }
     } else {
@@ -175,7 +175,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
     if (isLiveMode) {
         // --- Live API Text Logic ---
         if (liveIsConnecting) {
-            setDisplayedText("Connecting to Aria...");
+            setDisplayedText("Připojuji k Arii...");
             setCzechTranslation('');
             setCorrectionText(''); // clear on fresh connect
         } else if (liveIsConnected) {
@@ -183,7 +183,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
                 // Show real-time transcript of what Aria is saying
                 if (settings.showEnglishTranscript && outputTranscript) {
                     const { english, czech, correction } = parseTranscript(outputTranscript);
-                    setDisplayedText(english || "Aria is speaking...");
+                    setDisplayedText(english || "Aria mluví...");
                     // Update correction only when found; clear it when Aria's new turn has no correction yet
                     setCorrectionText(correction);
                     if (settings.showCzechTranslation) {
@@ -192,7 +192,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
                         setCzechTranslation('');
                     }
                 } else {
-                    setDisplayedText("Aria is speaking...");
+                    setDisplayedText("Aria mluví...");
                     setCzechTranslation('');
                     setCorrectionText('');
                 }
@@ -201,13 +201,13 @@ const AvatarView: React.FC<AvatarViewProps> = ({
                 if (inputTranscript) {
                     setDisplayedText(inputTranscript);
                 } else {
-                    setDisplayedText("Listening...");
+                    setDisplayedText("Poslouchám...");
                 }
                 setCzechTranslation('');
                 // NOTE: intentionally NOT clearing correctionText here
             }
         } else if (!liveError) {
-             setDisplayedText("Tap microphone to start conversation (Live)");
+             setDisplayedText("Klepni na mikrofon a začni (Live)");
              setCzechTranslation('');
              setCorrectionText(''); // clear when disconnected
         }
@@ -217,7 +217,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
              if (currentInput) {
                  setDisplayedText(currentInput);
              } else {
-                 setDisplayedText("Listening...");
+                 setDisplayedText("Poslouchám...");
              }
              setCzechTranslation('');
         } else if (legacyIsSpeaking) {
@@ -231,12 +231,12 @@ const AvatarView: React.FC<AvatarViewProps> = ({
                      setCzechTranslation('');
                  }
              } else {
-                 setDisplayedText("Speaking...");
+                 setDisplayedText("Mluvím...");
                  setCzechTranslation('');
                  setCorrectionText('');
              }
         } else {
-             setDisplayedText("Tap microphone to start conversation (Standard)");
+             setDisplayedText("Klepni na mikrofon a začni (Standard)");
              setCzechTranslation('');
         }
     }
@@ -338,7 +338,7 @@ const AvatarView: React.FC<AvatarViewProps> = ({
                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> Listening...
                </span>
              ) : (
-                <span className="text-slate-400">Paused ({isLiveMode ? 'Live' : 'Std'})</span>
+                <span className="text-slate-400">Připraveno ({isLiveMode ? 'Live' : 'Std'})</span>
              )}
           </div>
 
