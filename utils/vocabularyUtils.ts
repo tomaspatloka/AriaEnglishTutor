@@ -3,8 +3,11 @@ import { VocabularyEntry, VocabularyStatus } from '../types';
 const VOCAB_KEY = 'aria_vocabulary';
 
 const MASTERED_THRESHOLD = 3;
-const REFRESH_AFTER_DAYS = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
+// P1-7: SRS intervaly (dny) indexované srsLevel 0–5. Rostoucí spaced repetition.
+const SRS_INTERVALS_DAYS = [1, 3, 7, 16, 35, 90];
+const intervalMs = (srsLevel: number): number =>
+  SRS_INTERVALS_DAYS[Math.min(Math.max(srsLevel, 0), SRS_INTERVALS_DAYS.length - 1)] * DAY_MS;
 
 // Triggery pro auto-detekci slov z přepisu hlasu (jen anglické cílové slovo přes \w = ASCII).
 // Cíl: pokrýt přirozené české/anglické formulace během čtení.
@@ -50,15 +53,32 @@ const migrateEntry = (raw: any): VocabularyEntry | null => {
   if (typeof raw.id !== 'string' || typeof raw.word !== 'string') return null;
   const status: VocabularyStatus =
     raw.status === 'learning' || raw.status === 'mastered' ? raw.status : 'new';
+  const addedAt = typeof raw.addedAt === 'number' ? raw.addedAt : Date.now();
+  const lastReviewedAt = typeof raw.lastReviewedAt === 'number' ? raw.lastReviewedAt : undefined;
+
+  // P1-7 backfill SRS polí pro stará data z v1.9.x a dřív:
+  const srsLevel = typeof raw.srsLevel === 'number' ? raw.srsLevel : (status === 'mastered' ? 2 : 0);
+  const consecutiveCorrect = typeof raw.consecutiveCorrect === 'number'
+    ? raw.consecutiveCorrect : (status === 'mastered' ? 3 : 0);
+  // ANTI-LAVINA: dueAt odvozen z POSLEDNÍHO opakování (ne now), jinak by se po upgradu
+  // vysypal celý slovník do due fronty najednou. (lastReviewedAt ?? addedAt) + interval(srsLevel).
+  const dueAt = typeof raw.dueAt === 'number'
+    ? raw.dueAt
+    : (lastReviewedAt ?? addedAt) + intervalMs(srsLevel);
+
   return {
     id: raw.id,
     word: raw.word,
-    addedAt: typeof raw.addedAt === 'number' ? raw.addedAt : Date.now(),
+    addedAt,
     definition: typeof raw.definition === 'string' ? raw.definition : undefined,
     status,
     correctCount: typeof raw.correctCount === 'number' ? raw.correctCount : 0,
     incorrectCount: typeof raw.incorrectCount === 'number' ? raw.incorrectCount : 0,
-    lastReviewedAt: typeof raw.lastReviewedAt === 'number' ? raw.lastReviewedAt : undefined,
+    lastReviewedAt,
+    srsLevel,
+    dueAt,
+    consecutiveCorrect,
+    contextSentence: typeof raw.contextSentence === 'string' ? raw.contextSentence : undefined,
   };
 };
 
@@ -82,14 +102,19 @@ export const addVocabularyWord = (word: string, definition?: string): Vocabulary
   const entries = loadVocabulary();
   const normalized = word.toLowerCase().trim();
   if (!normalized || entries.some(e => e.word.toLowerCase() === normalized)) return entries;
+  const now = Date.now();
   const newEntry: VocabularyEntry = {
     id: Math.random().toString(36).substring(2, 9),
     word: word.trim(),
-    addedAt: Date.now(),
+    addedAt: now,
     definition,
     status: 'new',
     correctCount: 0,
     incorrectCount: 0,
+    // P1-7: nové slovo je poprvé due za 1 den (srsLevel 0).
+    srsLevel: 0,
+    dueAt: now + intervalMs(0),
+    consecutiveCorrect: 0,
   };
   const updated = [newEntry, ...entries];
   saveVocabulary(updated);
@@ -156,55 +181,56 @@ export const extractVocabFromTranscript = (transcript: string): string[] => {
 
 type RecallResult = 'correct' | 'incorrect' | 'skip';
 
+// P1-7: skutečné SRS. correct → posun na vyšší level + delší interval; incorrect → lapse
+// step-back (srsLevel-2, ne tvrdý reset na 0); mastered = 3 PO SOBĚ jdoucí správně.
 export const recordRecallResult = (id: string, result: RecallResult): VocabularyEntry[] => {
+  const now = Date.now();
   const entries = loadVocabulary().map(e => {
     if (e.id !== id) return e;
-    const next: VocabularyEntry = { ...e, lastReviewedAt: Date.now() };
+    const next: VocabularyEntry = { ...e, lastReviewedAt: now };
     if (result === 'correct') {
       next.correctCount = e.correctCount + 1;
-      // 3 v řadě (streak ~ correctCount - incorrectCount za poslední běh)
-      // Zjednodušení: mastered = correctCount >= 3 a correctCount > incorrectCount
-      if (next.correctCount >= MASTERED_THRESHOLD && next.correctCount > next.incorrectCount) {
-        next.status = 'mastered';
-      } else if (e.status === 'new') {
-        next.status = 'learning';
-      }
+      next.consecutiveCorrect = e.consecutiveCorrect + 1;
+      next.srsLevel = Math.min(e.srsLevel + 1, SRS_INTERVALS_DAYS.length - 1);
+      next.dueAt = now + intervalMs(next.srsLevel);
+      next.status = next.consecutiveCorrect >= MASTERED_THRESHOLD ? 'mastered' : 'learning';
     } else if (result === 'incorrect') {
       next.incorrectCount = e.incorrectCount + 1;
+      next.consecutiveCorrect = 0;
+      // Lapse step-back: 35denní slovo po jednom zaváhání nepadá na den 1.
+      next.srsLevel = Math.max(0, e.srsLevel - 2);
+      next.dueAt = now; // dnes znovu
       next.status = 'learning';
     }
+    // skip: jen lastReviewedAt (už nastaveno), SRS beze změny
     return next;
   });
   saveVocabulary(entries);
   return entries;
 };
 
-// Zvládnuté slovo, které čeká na refresh (lastReviewedAt + 7d ≤ now).
-// Mastered slova s neexistujícím lastReviewedAt jsou považována za hraniční (raději ne — preference: refresh).
-export const isDueForRefresh = (entry: VocabularyEntry, now: number = Date.now()): boolean => {
-  if (entry.status !== 'mastered') return false;
-  if (!entry.lastReviewedAt) return true;
-  return now - entry.lastReviewedAt >= REFRESH_AFTER_DAYS * DAY_MS;
-};
+// P1-7: slovo je „due", když dueAt ≤ now (nahrazuje fixních 7 dní). Platí pro všechny statusy.
+export const isDueForRefresh = (entry: VocabularyEntry, now: number = Date.now()): boolean =>
+  entry.dueAt <= now;
 
 export const countDueForRefresh = (entries: VocabularyEntry[]): number => {
   const now = Date.now();
   return entries.reduce((acc, e) => acc + (isDueForRefresh(e, now) ? 1 : 0), 0);
 };
 
-// Priorita: learning > new > mastered-due-for-refresh > (volitelně) všechna ostatní mastered
+// Priorita: due (dueAt ≤ now, vč. mastered) → learning ne-due → new ne-due → (volitelně) mastered ne-due
 export const buildRecallQueue = (
   entries: VocabularyEntry[],
   includeAllMastered: boolean
 ): VocabularyEntry[] => {
   const now = Date.now();
-  const learning = entries.filter(e => e.status === 'learning');
-  const fresh = entries.filter(e => e.status === 'new');
-  const masteredDue = entries.filter(e => e.status === 'mastered' && isDueForRefresh(e, now));
+  const due = entries.filter(e => e.dueAt <= now);
+  const learningNotDue = entries.filter(e => e.status === 'learning' && e.dueAt > now);
+  const newNotDue = entries.filter(e => e.status === 'new' && e.dueAt > now);
   const masteredRest = includeAllMastered
-    ? entries.filter(e => e.status === 'mastered' && !isDueForRefresh(e, now))
+    ? entries.filter(e => e.status === 'mastered' && e.dueAt > now)
     : [];
-  return [...learning, ...fresh, ...masteredDue, ...masteredRest];
+  return [...due, ...learningNotDue, ...newNotDue, ...masteredRest];
 };
 
 // Bulk add — z volně formátovaného textu (čárky / nové řádky / středníky / mezery), s autopřekladem.

@@ -72,6 +72,12 @@ export interface VocabularyEntry {
   correctCount: number;
   incorrectCount: number;
   lastReviewedAt?: number;
+  // P1-7 SRS (spaced repetition):
+  srsLevel: number;           // 0–5, index do SRS_INTERVALS_DAYS; default 0
+  dueAt: number;              // timestamp příštího opakování; default odvozen v migraci
+  consecutiveCorrect: number; // streak správných odpovědí per slovo; default 0
+  // P1-8:
+  contextSentence?: string;   // věta, ve které se slovo objevilo
 }
 
 export interface RecallSessionResult {
