@@ -13,6 +13,7 @@ import ProgressModal from './components/ProgressModal';
 import VocabularyModal from './components/VocabularyModal';
 import { loadVocabulary, extractVocabFromTranscript, addVocabularyWordWithDefinition, buildFocusWords } from './utils/vocabularyUtils';
 import { mergeSummaryIntoProfile, getRecurringErrorStrings } from './utils/learnerProfileUtils';
+import { extractLevelVerdict } from './utils/levelUtils';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useTextToSpeech } from './hooks/useTextToSpeech';
 import { useWakeLock } from './hooks/useWakeLock';
@@ -72,6 +73,9 @@ function App() {
     conversationMessages: [] as Message[],
   });
   const [progressNotice, setProgressNotice] = useState<string | null>(null);
+  const [levelToast, setLevelToast] = useState<string | null>(null); // P0-3: TEST_ME verdikt
+  const levelToastTimerRef = useRef<number | null>(null);
+  useEffect(() => () => { if (levelToastTimerRef.current) window.clearTimeout(levelToastTimerRef.current); }, []);
 
   const prevInteractionModeRef = useRef<AppSettings['interactionMode']>(settings.interactionMode);
   const sessionStartedAtRef = useRef<number>(Date.now());
@@ -357,6 +361,32 @@ function App() {
     }
   }, [liveRuntimeState.conversationMessages]);
 
+  // P0-3: zápis TEST_ME verdiktu do nastavení. Idempotentní — jakmile level není TEST_ME,
+  // další volání nic nezmění (chrání před opakovaným matchnutím téže zprávy).
+  const applyLevelVerdict = (verdict: EnglishLevel) => {
+    setSettings(prev => {
+      if (prev.level !== 'TEST_ME') return prev;
+      const ns = { ...prev, level: verdict };
+      saveSettings(ns);
+      return ns;
+    });
+    setLevelToast(`🎉 Tvoje úroveň: ${verdict}`);
+    if (levelToastTimerRef.current) window.clearTimeout(levelToastTimerRef.current);
+    levelToastTimerRef.current = window.setTimeout(() => setLevelToast(null), 4500);
+  };
+
+  // P0-3 (Live cesta): hledej verdikt v model zprávách. Guard: jen v assessment módu.
+  useEffect(() => {
+    if (settings.level !== 'TEST_ME') return;
+    for (let i = liveRuntimeState.conversationMessages.length - 1; i >= 0; i--) {
+      const m = liveRuntimeState.conversationMessages[i];
+      if (m.role !== 'model') continue;
+      const verdict = extractLevelVerdict(m.text);
+      if (verdict) { applyLevelVerdict(verdict); break; }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveRuntimeState.conversationMessages, settings.level]);
+
   const handleLevelSelect = async (level: EnglishLevel) => {
     if (isInitializingRef.current) return;
     isInitializingRef.current = true;
@@ -600,6 +630,12 @@ Return to normal English tutor behavior in your next response.`;
 
       setMessages(prev => [...prev, aiMessage]);
       speak(responseText);
+
+      // P0-3 (Legacy cesta): verdikt z odpovědi Arie, jen v assessment módu.
+      if (settings.level === 'TEST_ME') {
+        const verdict = extractLevelVerdict(responseText);
+        if (verdict) applyLevelVerdict(verdict);
+      }
 
     } catch (error) {
       console.error("Failed to send message", error);
@@ -953,6 +989,17 @@ Return to normal English tutor behavior in your next response.`;
           isLoading={isLoading}
           errorMessage={speechError}
         />
+      )}
+
+      {/* P0-3: Toast s výsledkem assessmentu (TEST_ME → úroveň) */}
+      {levelToast && (
+        <div
+          className="fixed top-20 left-1/2 -translate-x-1/2 z-[120] bg-emerald-500 text-white text-sm font-black rounded-full px-5 py-2.5 shadow-2xl border border-emerald-300/50"
+          role="status"
+          aria-live="polite"
+        >
+          {levelToast}
+        </div>
       )}
 
       {/* PWA Install Banner */}

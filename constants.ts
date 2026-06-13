@@ -320,6 +320,15 @@ Naturally use 1–2 of them in conversation when fitting. Occasionally invite th
 to use one ("Can you try using the word 'rope'?"). Never list them.
 ` : '';
 
+  // P0-3: jen v assessment módu — instrukce vyhlásit verdikt v parsovatelném formátu.
+  const testMeBlock = level === 'TEST_ME' ? `
+**LEVEL ASSESSMENT:** When you are confident about the student's level (after 6–10 exchanges),
+announce the verdict on ITS OWN line, EXACTLY in this format and nothing else on that line:
+LEVEL: B1
+(allowed values: A1, A2, B1, B2, C1 — never "almost B1", never "B1+")
+Then congratulate the student briefly in Czech.
+` : '';
+
   // P0-1: opakované slabiny žáka z předchozích lekcí. Blok jen když profil něco má.
   const weaknessBlock = recurringErrors.length > 0 ? `
 **STUDENT'S RECURRING WEAKNESSES (from previous lessons):** ${recurringErrors.join('; ')}.
@@ -349,6 +358,7 @@ ${scenarioBlock}
 ${correctionLogic}
 ${vocabBlock}
 ${weaknessBlock}
+${testMeBlock}
 Core Rules:
 1. **Language Barrier:** The user is Czech. If they write in Czech, **reply in Czech** but guide them back to English.
 2. **Translation:** ${enableTranslation ? "REQUIRED: After your English response, provide a Czech translation of what you just said. Start with '🇨🇿 Translation:'." : "No full translation unless asked."}
