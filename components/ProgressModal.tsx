@@ -10,6 +10,7 @@ interface ProgressModalProps {
   history: LessonHistoryEntry[];
   stats: ProgressStats;
   notice: string | null;
+  onStartDrill?: () => void; // P1-10: spustit drill na practice sentences
 }
 
 const formatMinutes = (ms: number) => `${Math.max(0, Math.round(ms / 60000))} min`;
@@ -30,6 +31,7 @@ const ProgressModal: React.FC<ProgressModalProps> = ({
   history,
   stats,
   notice,
+  onStartDrill,
 }) => {
   if (!isOpen) return null;
 
@@ -108,6 +110,15 @@ const ProgressModal: React.FC<ProgressModalProps> = ({
                   <ul className="space-y-1 text-gray-700">
                     {latestSummary.practiceSentences.map((item, idx) => <li key={`p-${idx}`}>- {item}</li>)}
                   </ul>
+                  {/* P1-10: drill na practice sentences */}
+                  {onStartDrill && latestSummary.practiceSentences.length > 0 && (
+                    <button
+                      onClick={onStartDrill}
+                      className="mt-2 px-4 py-2 bg-indigo-600 text-white text-xs font-black rounded-xl hover:bg-indigo-500 transition active:scale-95"
+                    >
+                      🗣️ Procvičit věty nahlas
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (

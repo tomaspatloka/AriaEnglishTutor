@@ -11,6 +11,7 @@ import AvatarView from './components/AvatarView';
 import ReadingModeView from './components/ReadingModeView';
 import ProgressModal from './components/ProgressModal';
 import VocabularyModal from './components/VocabularyModal';
+import DrillSheet from './components/DrillSheet';
 import { loadVocabulary, extractVocabFromTranscript, addVocabularyWordWithDefinition, buildFocusWords, countDueForRefresh } from './utils/vocabularyUtils';
 import { getTodayMinutes, getDailyGoal, setDailyGoal } from './utils/dailyGoalUtils';
 import { mergeSummaryIntoProfile, getRecurringErrorStrings } from './utils/learnerProfileUtils';
@@ -80,6 +81,7 @@ function App() {
   const [dailyGoal, setDailyGoalState] = useState<number>(() => getDailyGoal()); // P0-4
   const levelVerdictAppliedRef = useRef(false); // P0-3: jediná aplikace verdiktu per assessment
   const [restartHint, setRestartHint] = useState(false); // P1-13: změny za běhu Live
+  const [showDrill, setShowDrill] = useState(false); // P1-10: drill na practice sentences
 
   const prevInteractionModeRef = useRef<AppSettings['interactionMode']>(settings.interactionMode);
   const sessionStartedAtRef = useRef<number>(Date.now());
@@ -800,6 +802,18 @@ Return to normal English tutor behavior in your next response.`;
         history={lessonHistory}
         stats={progressStats}
         notice={progressNotice}
+        onStartDrill={latestSummary && latestSummary.practiceSentences.length > 0
+          ? () => { setShowProgress(false); setShowDrill(true); }
+          : undefined}
+      />
+
+      {/* P1-10: Drill na practice sentences ze session summary */}
+      <DrillSheet
+        isOpen={showDrill}
+        onClose={() => setShowDrill(false)}
+        sentences={latestSummary?.practiceSentences ?? []}
+        voiceAccent={settings.voiceAccent}
+        onSpeak={speakManual}
       />
 
       <VocabularyModal
