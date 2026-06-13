@@ -78,6 +78,7 @@ function App() {
   const levelToastTimerRef = useRef<number | null>(null);
   useEffect(() => () => { if (levelToastTimerRef.current) window.clearTimeout(levelToastTimerRef.current); }, []);
   const [dailyGoal, setDailyGoalState] = useState<number>(() => getDailyGoal()); // P0-4
+  const levelVerdictAppliedRef = useRef(false); // P0-3: jediná aplikace verdiktu per assessment
 
   const prevInteractionModeRef = useRef<AppSettings['interactionMode']>(settings.interactionMode);
   const sessionStartedAtRef = useRef<number>(Date.now());
@@ -202,6 +203,7 @@ function App() {
     sessionStartedAtRef.current = Date.now();
     speakingMsRef.current = 0;
     voiceActiveStartedAtRef.current = null;
+    levelVerdictAppliedRef.current = false; // P0-3: nová session → znovu povol jeden verdikt
     setLatestSummary(null);
     setProgressNotice(null);
   };
@@ -371,6 +373,11 @@ function App() {
   // P0-3: zápis TEST_ME verdiktu do nastavení. Idempotentní — jakmile level není TEST_ME,
   // další volání nic nezmění (chrání před opakovaným matchnutím téže zprávy).
   const applyLevelVerdict = (verdict: EnglishLevel) => {
+    // Ref-guard: Live conversationMessages se mění po chuncích → useEffect může matchnout
+    // tentýž verdikt vícekrát v rychlém sledu. Ref nastavený synchronně před setSettings
+    // zaručí jediný zápis i jediný toast (advisor fix). Reset v resetSessionTracking.
+    if (levelVerdictAppliedRef.current) return;
+    levelVerdictAppliedRef.current = true;
     setSettings(prev => {
       if (prev.level !== 'TEST_ME') return prev;
       const ns = { ...prev, level: verdict };
