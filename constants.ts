@@ -1,5 +1,19 @@
-export const APP_VERSION = "v1.8.1";
+export const APP_VERSION = "v1.9.0";
 export const RELEASE_HISTORY = [
+  {
+    version: "v1.9.0",
+    date: "2026-06-13",
+    title: "Tutor s pamětí — Aria si pamatuje, co tě trápí",
+    changes: [
+      "Aria si pamatuje tvé opakované chyby napříč lekcemi a nenápadně je vplétá do konverzace (žádná přednáška — přirozené procvičení slabin).",
+      "Recyklace slovíček: slova, která se učíš, Aria sama použije v hovoru a občas tě vyzve, ať jedno z nich řekneš.",
+      "Kratší repliky Arie — víc prostoru pro tebe; Aria končí otázkou, abys mluvil ty (mluvení = učení).",
+      "Poctivý čas mluvení v Reading módu — měří se jen tvůj hlas, ne čas, kdy čte Aria.",
+      "Odchod z Reading módu přes ikonu 📚 v hlavičce už neztratí lekci — vždy se zapíše do historie.",
+      "Test úrovně (TEST_ME) zjistí tvou úroveň a rovnou ji nastaví — další lekce už jede na zjištěné úrovni.",
+      "Denní cíl mluvení + streak v hlavičce i na úvodní obrazovce; nastavitelný cíl 5–60 min; připomínka slovíček k opakování.",
+    ],
+  },
   {
     version: "v1.8.1",
     date: "2026-06-11",
